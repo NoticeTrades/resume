@@ -168,8 +168,9 @@ function initPortrait() {
       const brightness = (red + green + blue) / 3;
       const mask = portraitMask(x / portraitWidth, y / portraitHeight);
 
-      if (alpha > 20 && brightness > 18 && mask > 0.08) {
-        const teal = Math.min(255, Math.round(green * 0.55 + blue * 0.65 + 60));
+      if (alpha > 10 && mask > 0.035) {
+        const detail = Math.max(0.35, brightness / 255);
+        const teal = Math.min(255, Math.round(90 + green * 0.42 + blue * 0.48));
         const homeX = offsetX + x;
         const homeY = offsetY + y;
         const introAngle = Math.random() * Math.PI * 2;
@@ -185,8 +186,8 @@ function initPortrait() {
           homeAngle: ((x / sample + y / sample) % 7) * 0.025 - 0.075,
           spin: (Math.random() - 0.5) * 0.24,
           shape: Math.round(x / sample + y / sample) % 4,
-          size: (sample * 1 + (brightness / 255) * 1) * Math.min(1, mask * 1.22),
-          color: `rgba(${Math.round(red * 0.38)}, ${Math.min(255, teal + 8)}, ${Math.min(255, blue + 52)}, ${(0.8 + brightness / 900) * Math.min(1, mask * 1.12)})`,
+          size: (sample * 1.08 + detail * 0.9) * Math.min(1, Math.max(0.55, mask * 1.18)),
+          color: `rgba(${Math.max(18, Math.round(red * 0.46))}, ${teal}, ${Math.max(82, Math.min(255, blue + 60))}, ${Math.min(0.96, Math.max(0.48, 0.72 + detail * 0.22) * Math.max(0.62, mask))})`,
         });
       }
     }
@@ -292,8 +293,8 @@ function drawPuzzlePiece(pixel) {
   ctx.translate(pixel.x, pixel.y);
   ctx.rotate(pixel.angle);
   ctx.fillStyle = pixel.color;
-  ctx.strokeStyle = "rgba(6, 19, 37, 0.52)";
-  ctx.lineWidth = 0.75;
+  ctx.strokeStyle = "rgba(6, 19, 37, 0.34)";
+  ctx.lineWidth = 0.55;
   ctx.lineJoin = "round";
   ctx.shadowBlur = 0;
   ctx.beginPath();
