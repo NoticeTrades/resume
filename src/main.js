@@ -30,6 +30,17 @@ app.innerHTML = `
     <div class="market-strip" aria-label="Futures market prices">
       <div class="ticker-track" id="tickerTrack"></div>
     </div>
+    <div class="social-icons" aria-label="Social links">
+      <a href="https://www.linkedin.com/in/nicktrades/" target="_blank" rel="noreferrer" aria-label="LinkedIn">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.94 8.86H3.2V20h3.74V8.86ZM5.07 7.34c1.2 0 1.95-.8 1.95-1.8-.02-1.02-.75-1.8-1.92-1.8s-1.95.78-1.95 1.8c0 1 .75 1.8 1.9 1.8h.02ZM20.85 13.62c0-3.42-1.82-5.02-4.25-5.02-1.96 0-2.84 1.08-3.33 1.84V8.86H9.53c.05 1.05 0 11.14 0 11.14h3.74v-6.22c0-.33.02-.66.12-.9.27-.66.88-1.35 1.9-1.35 1.34 0 1.88 1.02 1.88 2.52V20h3.74l-.06-6.38Z"/></svg>
+      </a>
+      <a href="https://www.youtube.com/@noticetrades" target="_blank" rel="noreferrer" aria-label="YouTube">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21.62 7.3a3 3 0 0 0-2.11-2.12C17.65 4.68 12 4.68 12 4.68s-5.65 0-7.51.5A3 3 0 0 0 2.38 7.3 31.24 31.24 0 0 0 1.88 12c0 1.64.17 3.28.5 4.7a3 3 0 0 0 2.11 2.12c1.86.5 7.51.5 7.51.5s5.65 0 7.51-.5a3 3 0 0 0 2.11-2.12c.33-1.42.5-3.06.5-4.7s-.17-3.28-.5-4.7ZM9.98 15.55v-7.1L15.9 12l-5.92 3.55Z"/></svg>
+      </a>
+      <a href="https://x.com/noticetrades" target="_blank" rel="noreferrer" aria-label="X">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.42 10.27 22.13 1.3h-1.83l-6.7 7.8-5.35-7.8H2.08l8.08 11.77-8.08 9.4h1.83l7.06-8.22 5.64 8.22h6.17l-8.36-12.2Zm-2.5 2.9-.82-1.17L4.6 2.68h2.77l5.26 7.53.82 1.17 6.84 9.8h-2.77l-5.6-8.01Z"/></svg>
+      </a>
+    </div>
   </header>
 
   <main>
@@ -43,23 +54,22 @@ app.innerHTML = `
           <p class="eyebrow">finance / trading / technology</p>
           <h1 id="typedIntro" aria-label="Hello, Nick Here."></h1>
           <p>
-            By day, I work as a financial advisor for HVAC businesses, building models,
-            forecasts, and revenue projections that help owners make clearer decisions.
-            In my free time, I study financial markets, trading, finance, new technology,
-            and the fast-moving world of AI.
+            Financial advisor by day, market student by night. I build models and
+            forecasts for HVAC businesses while studying trading, finance, new
+            technology, and AI.
           </p>
           <a class="contact-action" href="mailto:nickthomasfx@gmail.com">Contact me</a>
         </div>
       </div>
     </section>
 
-    <section class="about-section" id="about">
+    <section class="about-section reveal-on-scroll" id="about">
       <div class="section-heading">
         <h2>/ about me</h2>
         <span></span>
       </div>
       <div class="about-grid">
-        <article class="about-copy">
+        <article class="about-copy reveal-on-scroll">
           <p>
             During the day, I work with HVAC companies as a financial advisor, translating
             operating assumptions into models, forecasts, and revenue projections that
@@ -76,7 +86,7 @@ app.innerHTML = `
             especially NQ, ES, and YM.
           </p>
         </article>
-        <aside class="focus-panel">
+        <aside class="focus-panel reveal-on-scroll">
           <h3>current focus</h3>
           <ul>
             <li>Financial forecasting</li>
@@ -89,7 +99,7 @@ app.innerHTML = `
       </div>
     </section>
 
-    <section class="books-section" id="books">
+    <section class="books-section reveal-on-scroll" id="books">
       <div class="section-heading">
         <h2>/ book recommendations</h2>
         <span></span>
@@ -327,6 +337,21 @@ if (image.complete) {
 }
 
 window.addEventListener("resize", initPortrait);
+
+const revealItems = document.querySelectorAll(".reveal-on-scroll");
+const revealObserver = new IntersectionObserver(
+  (entries) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add("is-visible");
+        revealObserver.unobserve(entry.target);
+      }
+    });
+  },
+  { threshold: 0.18 }
+);
+
+revealItems.forEach((item) => revealObserver.observe(item));
 
 const typedIntro = document.getElementById("typedIntro");
 const introText = "Hello, Nick Here.";
