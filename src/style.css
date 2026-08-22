@@ -185,7 +185,7 @@ a {
 .hero {
   position: relative;
   min-height: calc(100vh - 64px);
-  padding: 22px clamp(18px, 10vw, 220px) 96px;
+  padding: 34px clamp(22px, 11vw, 240px) 112px;
   overflow: hidden;
 }
 
@@ -199,18 +199,18 @@ a {
 }
 
 .hero-inner {
-  min-height: calc(100vh - 190px);
+  min-height: calc(100vh - 230px);
   display: grid;
-  grid-template-columns: minmax(280px, 520px) minmax(320px, 650px);
+  grid-template-columns: minmax(250px, 430px) minmax(300px, 590px);
   align-items: center;
   justify-content: center;
-  gap: clamp(44px, 8vw, 120px);
+  gap: clamp(48px, 9vw, 140px);
 }
 
 .portrait-shell {
   position: relative;
   z-index: 5;
-  width: min(500px, 40vw);
+  width: min(420px, 34vw);
   aspect-ratio: 0.88;
   padding: 0;
   border: 0;
@@ -249,9 +249,9 @@ p {
 }
 
 .hero-copy h1 {
-  margin-bottom: 28px;
+  margin-bottom: 24px;
   color: var(--aqua);
-  font-size: clamp(58px, 7vw, 96px);
+  font-size: clamp(46px, 5.8vw, 78px);
   line-height: 1;
   font-weight: 900;
 }
@@ -283,22 +283,22 @@ p {
 }
 
 .hero-copy p:not(.eyebrow) {
-  max-width: 620px;
+  max-width: 580px;
   margin-bottom: 0;
   color: var(--muted);
-  font-size: clamp(18px, 1.7vw, 23px);
+  font-size: clamp(16px, 1.38vw, 20px);
   font-weight: 650;
-  line-height: 1.72;
+  line-height: 1.68;
 }
 
 .contact-action {
-  min-height: 52px;
+  min-height: 48px;
   width: fit-content;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-top: 42px;
-  padding: 0 20px;
+  margin-top: 34px;
+  padding: 0 18px;
   border: 1px solid rgba(89, 241, 215, 0.65);
   border-radius: 5px;
   background: var(--aqua);
@@ -314,7 +314,7 @@ p {
 
 .about-section,
 .books-section {
-  padding: 0 clamp(18px, 10vw, 220px) 110px;
+  padding: 0 clamp(22px, 11vw, 240px) 110px;
 }
 
 .section-heading {
@@ -440,11 +440,11 @@ p {
     min-height: auto;
     grid-template-columns: 1fr;
     gap: 24px;
-    padding-top: 56px;
+    padding-top: 36px;
   }
 
   .portrait-shell {
-    width: min(390px, 82vw);
+    width: min(330px, 76vw);
     justify-self: center;
   }
 
@@ -484,11 +484,11 @@ p {
 
   .hero {
     min-height: auto;
-    padding-bottom: 72px;
+    padding-bottom: 78px;
   }
 
   .hero-copy h1 {
-    font-size: 50px;
+    font-size: 42px;
   }
 
   .contact-action {
