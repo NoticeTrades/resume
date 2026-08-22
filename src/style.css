@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Sora:wght@500;600;700;800&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Oxanium:wght@500;600;700&family=Sora:wght@500;600;700;800&display=swap");
 
 :root {
   --bg: #07172b;
@@ -64,12 +64,23 @@ a {
   padding: 0;
   border: 0;
   background: transparent;
-  color: #cfd9f4;
-  font-family: "Space Grotesk", Sora, sans-serif;
-  font-size: 21px;
+  color: #edf4ff;
+  font-family: Oxanium, Sora, sans-serif;
+  font-size: 22px;
   font-weight: 700;
-  letter-spacing: 0.015em;
+  letter-spacing: 0.035em;
   cursor: pointer;
+  text-transform: uppercase;
+}
+
+.wordmark::before {
+  content: "{ ";
+  color: var(--aqua);
+}
+
+.wordmark::after {
+  content: " }";
+  color: var(--aqua);
 }
 
 .site-header nav {
@@ -80,10 +91,11 @@ a {
 
 .site-header nav a {
   color: #c3cce5;
-  font-family: "Space Grotesk", Sora, sans-serif;
-  font-size: 14px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
+  font-family: Oxanium, Sora, sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
   transition: color 0.2s ease;
 }
 
