@@ -54,9 +54,9 @@ app.innerHTML = `
           <p class="eyebrow">finance / trading / technology</p>
           <h1 id="typedIntro" aria-label="Hello, Nick Here."></h1>
           <p>
-            Financial advisor by day, market student by night. I build models and
-            forecasts for HVAC businesses while studying trading, finance, new
-            technology, and AI.
+            I turn messy business assumptions into useful financial models, then spend
+            my off-hours pulling apart markets, trading ideas, and new AI tools to see
+            what actually holds up.
           </p>
           <a class="contact-action" href="mailto:nickthomasfx@gmail.com">Contact me</a>
         </div>
@@ -136,7 +136,7 @@ function initPortrait() {
   const canvasHeight = Math.max(1, Math.round(heroRect.height));
   const portraitWidth = Math.max(1, Math.round(portraitRect.width));
   const portraitHeight = Math.max(1, Math.round(portraitRect.height));
-  const sample = 8;
+  const sample = 11;
 
   canvas.width = canvasWidth;
   canvas.height = canvasHeight;
@@ -173,20 +173,20 @@ function initPortrait() {
         const homeX = offsetX + x;
         const homeY = offsetY + y;
         const introAngle = Math.random() * Math.PI * 2;
-        const introDistance = 140 + Math.random() * Math.max(canvasWidth, canvasHeight) * 0.42;
+        const introDistance = 90 + Math.random() * Math.max(canvasWidth, canvasHeight) * 0.32;
         pixels.push({
           x: homeX + Math.cos(introAngle) * introDistance,
           y: homeY + Math.sin(introAngle) * introDistance,
           homeX,
           homeY,
-          vx: (Math.random() - 0.5) * 5,
-          vy: (Math.random() - 0.5) * 5,
+          vx: (Math.random() - 0.5) * 3,
+          vy: (Math.random() - 0.5) * 3,
           angle: Math.random() * Math.PI * 2,
           homeAngle: ((x / sample + y / sample) % 7) * 0.045 - 0.135,
           spin: (Math.random() - 0.5) * 0.24,
-          shape: (x / sample + y / sample) % 4,
-          size: (sample * 1.02 + (brightness / 255) * 1.3) * Math.min(1, mask * 1.32),
-          color: `rgba(${Math.round(red * 0.3)}, ${teal}, ${Math.min(255, blue + 44)}, ${(0.7 + brightness / 760) * Math.min(1, mask * 1.2)})`,
+          shape: Math.round(x / sample + y / sample) % 4,
+          size: (sample * 1.06 + (brightness / 255) * 1.1) * Math.min(1, mask * 1.25),
+          color: `rgba(${Math.round(red * 0.34)}, ${teal}, ${Math.min(255, blue + 44)}, ${(0.76 + brightness / 820) * Math.min(1, mask * 1.16)})`,
         });
       }
     }
@@ -195,7 +195,7 @@ function initPortrait() {
   cancelAnimationFrame(animationId);
   introTimer = setTimeout(() => {
     introAssembling = false;
-  }, 2600);
+  }, 1500);
   animatePortrait();
 }
 
@@ -240,10 +240,10 @@ function scatterPortrait(event) {
     const dy = pixel.homeY - clickY;
     const angle = Math.atan2(dy, dx) + (Math.random() - 0.5) * 1.25;
     const distance = Math.max(24, Math.hypot(dx, dy));
-    const burst = 18 + Math.random() * 24 + Math.max(0, 300 - distance) * 0.08;
-    pixel.vx += Math.cos(angle) * burst + (Math.random() - 0.5) * 10;
-    pixel.vy += Math.sin(angle) * burst + (Math.random() - 0.5) * 10;
-    pixel.spin += (Math.random() - 0.5) * 0.55;
+    const burst = 16 + Math.random() * 18 + Math.max(0, 260 - distance) * 0.07;
+    pixel.vx += Math.cos(angle) * burst + (Math.random() - 0.5) * 8;
+    pixel.vy += Math.sin(angle) * burst + (Math.random() - 0.5) * 8;
+    pixel.spin += (Math.random() - 0.5) * 0.32;
   }
 }
 
@@ -255,26 +255,26 @@ function animatePortrait() {
       const dx = pixel.x - pointer.x;
       const dy = pixel.y - pointer.y;
       const distance = Math.hypot(dx, dy);
-      const radius = 190;
+      const radius = 145;
       if (distance < radius) {
         const falloff = 1 - distance / radius;
-        const centerSoftener = distance < 34 ? distance / 34 : 1;
-        const force = falloff * centerSoftener * 13;
-        const angle = Math.atan2(dy, dx) + Math.sin(distance * 0.06) * 0.48;
+        const centerSoftener = distance < 38 ? distance / 38 : 1;
+        const force = falloff * centerSoftener * 8.5;
+        const angle = Math.atan2(dy, dx) + Math.sin(distance * 0.05) * 0.32;
         pixel.vx += Math.cos(angle) * force;
         pixel.vy += Math.sin(angle) * force;
-        pixel.spin += falloff * 0.14;
+        pixel.spin += falloff * 0.08;
       }
     }
 
-    const pull = introAssembling ? 0.012 : 0.046;
-    const friction = introAssembling ? 0.91 : 0.74;
+    const pull = introAssembling ? 0.032 : 0.07;
+    const friction = introAssembling ? 0.82 : 0.68;
     pixel.vx += (pixel.homeX - pixel.x) * pull;
     pixel.vy += (pixel.homeY - pixel.y) * pull;
     pixel.vx *= friction;
     pixel.vy *= friction;
-    pixel.spin *= 0.8;
-    pixel.angle += (pixel.homeAngle - pixel.angle) * 0.075 + pixel.spin;
+    pixel.spin *= 0.72;
+    pixel.angle += (pixel.homeAngle - pixel.angle) * 0.11 + pixel.spin;
     pixel.x += pixel.vx;
     pixel.y += pixel.vy;
 
@@ -286,28 +286,32 @@ function animatePortrait() {
 
 function drawPuzzlePiece(pixel) {
   const size = pixel.size;
-  const knob = size * 0.29;
+  const notch = size * 0.18;
+  const tab = size * 0.12;
   ctx.save();
   ctx.translate(pixel.x, pixel.y);
   ctx.rotate(pixel.angle);
   ctx.fillStyle = pixel.color;
-  ctx.strokeStyle = "rgba(6, 19, 37, 0.82)";
-  ctx.lineWidth = Math.max(1, size * 0.11);
-  ctx.shadowColor = "rgba(89, 241, 215, 0.1)";
-  ctx.shadowBlur = size * 0.08;
+  ctx.strokeStyle = "rgba(6, 19, 37, 0.7)";
+  ctx.lineWidth = 1;
+  ctx.shadowBlur = 0;
   ctx.beginPath();
   ctx.moveTo(-size / 2, -size / 2);
-  ctx.lineTo(-knob, -size / 2);
-  if (pixel.shape % 2 === 0) ctx.arc(0, -size / 2, knob, Math.PI, 0, false);
+  ctx.lineTo(-tab, -size / 2);
+  ctx.lineTo(0, -size / 2 - (pixel.shape % 2 === 0 ? notch : -notch));
+  ctx.lineTo(tab, -size / 2);
   ctx.lineTo(size / 2, -size / 2);
-  ctx.lineTo(size / 2, -knob);
-  if (pixel.shape % 3 === 0) ctx.arc(size / 2, 0, knob, -Math.PI / 2, Math.PI / 2, false);
+  ctx.lineTo(size / 2, -tab);
+  ctx.lineTo(size / 2 + (pixel.shape % 3 === 0 ? notch : -notch), 0);
+  ctx.lineTo(size / 2, tab);
   ctx.lineTo(size / 2, size / 2);
-  ctx.lineTo(knob, size / 2);
-  if (pixel.shape % 2 === 1) ctx.arc(0, size / 2, knob, 0, Math.PI, false);
+  ctx.lineTo(tab, size / 2);
+  ctx.lineTo(0, size / 2 + (pixel.shape % 2 === 1 ? notch : -notch));
+  ctx.lineTo(-tab, size / 2);
   ctx.lineTo(-size / 2, size / 2);
-  ctx.lineTo(-size / 2, knob);
-  if (pixel.shape % 3 === 1) ctx.arc(-size / 2, 0, knob, Math.PI / 2, -Math.PI / 2, false);
+  ctx.lineTo(-size / 2, tab);
+  ctx.lineTo(-size / 2 + (pixel.shape % 3 === 1 ? notch : -notch), 0);
+  ctx.lineTo(-size / 2, -tab);
   ctx.closePath();
   ctx.fill();
   ctx.stroke();
