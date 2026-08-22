@@ -40,12 +40,18 @@ app.innerHTML = `
       <a href="https://x.com/noticetrades" target="_blank" rel="noreferrer" aria-label="X">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.42 10.27 22.13 1.3h-1.83l-6.7 7.8-5.35-7.8H2.08l8.08 11.77-8.08 9.4h1.83l7.06-8.22 5.64 8.22h6.17l-8.36-12.2Zm-2.5 2.9-.82-1.17L4.6 2.68h2.77l5.26 7.53.82 1.17 6.84 9.8h-2.77l-5.6-8.01Z"/></svg>
       </a>
+      <button class="pokeball-release" id="pokeballRelease" type="button" aria-label="Release a random Pokemon">
+        <img src="/pokemon/pokeball.png" alt="" />
+      </button>
     </div>
   </header>
 
   <main>
     <section class="hero" id="home">
       <canvas id="pixelPortrait" class="pixel-stage"></canvas>
+      <div class="pokemon-walker" id="pokemonWalker" aria-hidden="true">
+        <img id="pokemonSprite" src="/pokemon/bulbasaur.webp" alt="" />
+      </div>
       <div class="hero-inner">
         <button class="portrait-shell" type="button" aria-label="Scatter pixel portrait">
           <img src="/nick-pixel-source.jpg" alt="" id="portraitSource" />
@@ -117,6 +123,9 @@ document.getElementById("reloadSite").addEventListener("click", () => {
 });
 
 const hero = document.querySelector(".hero");
+const pokeballRelease = document.getElementById("pokeballRelease");
+const pokemonWalker = document.getElementById("pokemonWalker");
+const pokemonSprite = document.getElementById("pokemonSprite");
 const portraitShell = document.querySelector(".portrait-shell");
 const canvas = document.getElementById("pixelPortrait");
 const image = document.getElementById("portraitSource");
@@ -136,7 +145,7 @@ function initPortrait() {
   const canvasHeight = Math.max(1, Math.round(heroRect.height));
   const portraitWidth = Math.max(1, Math.round(portraitRect.width));
   const portraitHeight = Math.max(1, Math.round(portraitRect.height));
-  const sample = 9;
+  const sample = 8;
 
   canvas.width = canvasWidth;
   canvas.height = canvasHeight;
@@ -160,21 +169,19 @@ function initPortrait() {
 
   for (let y = 0; y < portraitHeight; y += sample) {
     for (let x = 0; x < portraitWidth; x += sample) {
-      const index = (y * portraitWidth + x) * 4;
-      const red = data[index];
-      const green = data[index + 1];
-      const blue = data[index + 2];
-      const alpha = data[index + 3];
-      const brightness = (red + green + blue) / 3;
+      const colorSample = sampleAverageColor(data, portraitWidth, portraitHeight, x, y, sample);
+      const { red, green, blue, alpha, brightness } = colorSample;
       const mask = portraitMask(x / portraitWidth, y / portraitHeight);
 
-      if (alpha > 10 && mask > 0.035) {
-        const detail = Math.max(0.35, brightness / 255);
-        const teal = Math.min(255, Math.round(90 + green * 0.42 + blue * 0.48));
+      if (alpha > 10 && brightness > 20 && mask > 0.11) {
+        const detail = Math.max(0.4, brightness / 255);
+        const themedRed = Math.round(red * 0.62 + 10);
+        const themedGreen = Math.round(green * 0.82 + 34);
+        const themedBlue = Math.round(blue * 0.86 + 38);
         const homeX = offsetX + x;
         const homeY = offsetY + y;
         const introAngle = Math.random() * Math.PI * 2;
-        const introDistance = 90 + Math.random() * Math.max(canvasWidth, canvasHeight) * 0.32;
+        const introDistance = 150 + Math.random() * Math.max(canvasWidth, canvasHeight) * 0.48;
         pixels.push({
           x: homeX + Math.cos(introAngle) * introDistance,
           y: homeY + Math.sin(introAngle) * introDistance,
@@ -186,8 +193,8 @@ function initPortrait() {
           homeAngle: ((x / sample + y / sample) % 7) * 0.025 - 0.075,
           spin: (Math.random() - 0.5) * 0.24,
           shape: Math.round(x / sample + y / sample) % 4,
-          size: (sample * 1.08 + detail * 0.9) * Math.min(1, Math.max(0.55, mask * 1.18)),
-          color: `rgba(${Math.max(18, Math.round(red * 0.46))}, ${teal}, ${Math.max(82, Math.min(255, blue + 60))}, ${Math.min(0.96, Math.max(0.48, 0.72 + detail * 0.22) * Math.max(0.62, mask))})`,
+          size: (sample * 1.08 + detail * 0.75) * Math.min(1, Math.max(0.72, mask * 1.2)),
+          color: `rgba(${Math.min(255, themedRed)}, ${Math.min(255, themedGreen)}, ${Math.min(255, themedBlue)}, ${Math.min(0.95, (0.7 + detail * 0.2) * Math.max(0.68, mask))})`,
         });
       }
     }
@@ -196,7 +203,7 @@ function initPortrait() {
   cancelAnimationFrame(animationId);
   introTimer = setTimeout(() => {
     introAssembling = false;
-  }, 1500);
+  }, 4200);
   animatePortrait();
 }
 
@@ -209,21 +216,117 @@ function portraitMask(nx, ny) {
   const mainShape = smoothstep(halfWidth + 0.035, halfWidth - 0.035, Math.abs(nx - center));
   const verticalFade = smoothstep(0.04, 0.13, ny) * (1 - smoothstep(0.96, 1.02, ny));
   const head = softEllipse(nx, ny, 0.56, 0.2, 0.2, 0.16, 0.22);
-  const paper = softEllipse(nx, ny, 0.21, 0.58, 0.25, 0.42, 0.18);
-  const body = softEllipse(nx, ny, 0.58, 0.58, 0.34, 0.38, 0.16);
+  const faceNeck = softEllipse(nx, ny, 0.56, 0.38, 0.17, 0.2, 0.12);
+  const shirt = softEllipse(nx, ny, 0.58, 0.58, 0.34, 0.38, 0.16);
+  const newspaper = softPolygon(nx, ny, [
+    [0.02, 0.02],
+    [0.17, 0.23],
+    [0.43, 0.3],
+    [0.49, 0.53],
+    [0.43, 0.9],
+    [0.12, 0.95],
+    [0.02, 0.72],
+  ]);
+  const rightArm = softPolygon(nx, ny, [
+    [0.47, 0.43],
+    [0.82, 0.36],
+    [0.94, 0.66],
+    [0.86, 0.92],
+    [0.54, 0.91],
+    [0.43, 0.66],
+  ]);
   const hand = softEllipse(nx, ny, 0.47, 0.82, 0.18, 0.1, 0.12);
 
-  let mask = Math.max(mainShape * verticalFade, head, paper * 0.92, body, hand);
+  let mask = Math.max(mainShape * verticalFade, head, faceNeck, shirt, newspaper * 0.92, rightArm * 0.78, hand);
   const topLeftTrim = softEllipse(nx, ny, -0.08, 0, 0.36, 0.26, 0.2);
   const lowerLeftTrim = softEllipse(nx, ny, -0.12, 1.02, 0.34, 0.22, 0.16);
   const lowerRightTrim = softEllipse(nx, ny, 1.06, 0.98, 0.34, 0.22, 0.16);
-  mask *= 1 - Math.max(topLeftTrim * 0.9, lowerLeftTrim * 0.8, lowerRightTrim * 0.8);
+  const newspaperCornerTrim = softEllipse(nx, ny, 0.05, 0.08, 0.22, 0.16, 0.1);
+  const topLeftBlockTrim = softPolygon(nx, ny, [
+    [0, 0],
+    [0.24, 0],
+    [0.2, 0.2],
+    [0.06, 0.27],
+    [0, 0.2],
+  ]);
+  const bottomRightGridTrim = softEllipse(nx, ny, 0.98, 0.96, 0.2, 0.16, 0.1);
+  const rightEdgeTaper = smoothstep(0.98, 0.84, nx + Math.max(0, ny - 0.62) * 0.24);
+  mask *= rightEdgeTaper;
+  mask *= 1 - Math.max(
+    topLeftTrim * 0.62,
+    lowerLeftTrim * 0.54,
+    lowerRightTrim * 0.42,
+    newspaperCornerTrim * 0.82,
+    topLeftBlockTrim * 0.7,
+    bottomRightGridTrim * 0.42
+  );
   return Math.max(0, Math.min(1, mask));
+}
+
+function sampleAverageColor(data, width, height, startX, startY, size) {
+  let red = 0;
+  let green = 0;
+  let blue = 0;
+  let alpha = 0;
+  let count = 0;
+  const endY = Math.min(height, startY + size);
+  const endX = Math.min(width, startX + size);
+  for (let y = startY; y < endY; y += 2) {
+    for (let x = startX; x < endX; x += 2) {
+      const index = (y * width + x) * 4;
+      red += data[index];
+      green += data[index + 1];
+      blue += data[index + 2];
+      alpha += data[index + 3];
+      count += 1;
+    }
+  }
+  red /= count;
+  green /= count;
+  blue /= count;
+  alpha /= count;
+  return {
+    red,
+    green,
+    blue,
+    alpha,
+    brightness: (red + green + blue) / 3,
+  };
 }
 
 function softEllipse(x, y, cx, cy, rx, ry, feather) {
   const distance = Math.sqrt(((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2);
   return smoothstep(1 + feather, 1 - feather, distance);
+}
+
+function softPolygon(x, y, points) {
+  if (!inPolygon(x, y, points)) return 0;
+  const distance = points.reduce((closest, point, index) => {
+    const next = points[(index + 1) % points.length];
+    return Math.min(closest, distanceToSegment(x, y, point[0], point[1], next[0], next[1]));
+  }, Infinity);
+  return smoothstep(0, 0.055, distance);
+}
+
+function inPolygon(x, y, points) {
+  let inside = false;
+  for (let i = 0, j = points.length - 1; i < points.length; j = i++) {
+    const xi = points[i][0];
+    const yi = points[i][1];
+    const xj = points[j][0];
+    const yj = points[j][1];
+    const intersects = yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi;
+    if (intersects) inside = !inside;
+  }
+  return inside;
+}
+
+function distanceToSegment(px, py, ax, ay, bx, by) {
+  const dx = bx - ax;
+  const dy = by - ay;
+  const length = dx * dx + dy * dy;
+  const t = length === 0 ? 0 : Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / length));
+  return Math.hypot(px - (ax + t * dx), py - (ay + t * dy));
 }
 
 function smoothstep(edge0, edge1, x) {
@@ -248,34 +351,39 @@ function scatterPortrait(event) {
   }
 }
 
+function disturbPortrait(originX, originY, radius = 145, strength = 8.5) {
+  for (const pixel of pixels) {
+    const dx = pixel.x - originX;
+    const dy = pixel.y - originY;
+    const distance = Math.hypot(dx, dy);
+    if (distance < radius) {
+      const falloff = 1 - distance / radius;
+      const centerSoftener = distance < 38 ? distance / 38 : 1;
+      const force = falloff * centerSoftener * strength;
+      const angle = Math.atan2(dy, dx) + Math.sin(distance * 0.05) * 0.32;
+      pixel.vx += Math.cos(angle) * force;
+      pixel.vy += Math.sin(angle) * force;
+      pixel.spin += falloff * 0.08;
+    }
+  }
+}
+
 function animatePortrait() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  for (const pixel of pixels) {
-    if (pointer.active) {
-      const dx = pixel.x - pointer.x;
-      const dy = pixel.y - pointer.y;
-      const distance = Math.hypot(dx, dy);
-      const radius = 145;
-      if (distance < radius) {
-        const falloff = 1 - distance / radius;
-        const centerSoftener = distance < 38 ? distance / 38 : 1;
-        const force = falloff * centerSoftener * 8.5;
-        const angle = Math.atan2(dy, dx) + Math.sin(distance * 0.05) * 0.32;
-        pixel.vx += Math.cos(angle) * force;
-        pixel.vy += Math.sin(angle) * force;
-        pixel.spin += falloff * 0.08;
-      }
-    }
+  if (pointer.active) {
+    disturbPortrait(pointer.x, pointer.y);
+  }
 
-    const pull = introAssembling ? 0.032 : 0.07;
-    const friction = introAssembling ? 0.82 : 0.68;
+  for (const pixel of pixels) {
+    const pull = introAssembling ? 0.009 : 0.07;
+    const friction = introAssembling ? 0.93 : 0.68;
     pixel.vx += (pixel.homeX - pixel.x) * pull;
     pixel.vy += (pixel.homeY - pixel.y) * pull;
     pixel.vx *= friction;
     pixel.vy *= friction;
     pixel.spin *= 0.72;
-    pixel.angle += (pixel.homeAngle - pixel.angle) * 0.11 + pixel.spin;
+    pixel.angle += (pixel.homeAngle - pixel.angle) * (introAssembling ? 0.045 : 0.11) + pixel.spin;
     pixel.x += pixel.vx;
     pixel.y += pixel.vy;
 
@@ -358,6 +466,192 @@ const revealObserver = new IntersectionObserver(
 );
 
 revealItems.forEach((item) => revealObserver.observe(item));
+
+const pokemonOptions = [
+  { name: "Bulbasaur", src: "/pokemon/bulbasaur.webp", size: "sm" },
+  { name: "Shinx", src: "/pokemon/shinx.webp", size: "sm" },
+  { name: "Flareon", src: "/pokemon/flareon.webp", size: "lg" },
+  { name: "Gengar", src: "/pokemon/gengar.webp", size: "md" },
+  { name: "Pikachu", src: "/pokemon/pikachu.webp", size: "md" },
+  { name: "Blastoise", src: "/pokemon/blastoise.webp", size: "lg" },
+  { name: "Dragonite", src: "/pokemon/dragonite.webp", size: "sm" },
+  { name: "Mewtwo", src: "/pokemon/mewtwo.webp", size: "md" },
+  { name: "Charizard", src: "/pokemon/charizard.webp", size: "lg" },
+  { name: "Giratina", src: "/pokemon/giratina.webp", size: "lg" },
+];
+
+const walker = {
+  released: false,
+  x: window.innerWidth - 150,
+  y: 120,
+  vx: 1.45,
+  vy: 1.05,
+  facing: 1,
+  frameId: null,
+  lastTime: 0,
+};
+
+function pickPokemon() {
+  return pokemonOptions[Math.floor(Math.random() * pokemonOptions.length)];
+}
+
+function setReleasedPokemon(pokemon) {
+  pokemonSprite.src = pokemon.src;
+  pokemonSprite.alt = pokemon.name;
+  pokemonWalker.dataset.size = pokemon.size;
+  pokemonWalker.classList.remove("is-popping");
+  requestAnimationFrame(() => pokemonWalker.classList.add("is-popping"));
+}
+
+function releasePokemon() {
+  setReleasedPokemon(pickPokemon());
+  pokeballRelease.classList.add("is-open");
+  window.setTimeout(() => pokeballRelease.classList.remove("is-open"), 700);
+
+  if (walker.released) {
+    launchWalker();
+    return;
+  }
+
+  const ballRect = pokeballRelease.getBoundingClientRect();
+  walker.x = ballRect.left - 40;
+  walker.y = ballRect.bottom + 8;
+  walker.released = true;
+  pokemonWalker.classList.add("is-released");
+  launchWalker();
+  setWalkerPosition();
+  walker.frameId = requestAnimationFrame(animateWalker);
+}
+
+function launchWalker() {
+  const angle = Math.random() * Math.PI * 2;
+  const speed = 1.45 + Math.random() * 0.85;
+  walker.vx = Math.cos(angle) * speed || 1.4;
+  walker.vy = Math.sin(angle) * speed || 1;
+  walker.facing = walker.vx >= 0 ? 1 : -1;
+}
+
+function animateWalker(time) {
+  if (!walker.released) return;
+
+  const dt = Math.min(2.2, Math.max(0.75, (time - (walker.lastTime || time)) / 16.67));
+  walker.lastTime = time;
+  walker.x += walker.vx * dt;
+  walker.y += walker.vy * dt;
+  handleWalkerCollisions();
+  walker.facing = walker.vx >= 0 ? 1 : -1;
+  setWalkerPosition();
+  walker.frameId = requestAnimationFrame(animateWalker);
+}
+
+function handleWalkerCollisions() {
+  const bounds = getWalkerBounds();
+  const padding = 8;
+  const maxX = window.innerWidth - bounds.width - padding;
+  const maxY = window.innerHeight - bounds.height - padding;
+
+  if (walker.x < padding) {
+    walker.x = padding;
+    walker.vx = Math.abs(walker.vx);
+  } else if (walker.x > maxX) {
+    walker.x = maxX;
+    walker.vx = -Math.abs(walker.vx);
+  }
+
+  if (walker.y < 70) {
+    walker.y = 70;
+    walker.vy = Math.abs(walker.vy);
+  } else if (walker.y > maxY) {
+    walker.y = maxY;
+    walker.vy = -Math.abs(walker.vy);
+  }
+
+  const walkerRect = getWalkerBounds();
+  for (const obstacle of getCollisionObstacles()) {
+    const overlap = getOverlap(walkerRect, obstacle);
+    if (!overlap) continue;
+
+    const portraitRect = portraitShell.getBoundingClientRect();
+    if (obstacle.target === portraitShell) {
+      const heroRect = hero.getBoundingClientRect();
+      disturbPortrait(
+        walkerRect.left + walkerRect.width / 2 - heroRect.left,
+        walkerRect.top + walkerRect.height / 2 - heroRect.top,
+        118,
+        5.8
+      );
+    }
+
+    if (overlap.x < overlap.y) {
+      walker.x += walkerRect.left < obstacle.left ? -overlap.x - 2 : overlap.x + 2;
+      walker.vx *= -1;
+    } else {
+      walker.y += walkerRect.top < obstacle.top ? -overlap.y - 2 : overlap.y + 2;
+      walker.vy *= -1;
+    }
+
+    walker.vx += (Math.random() - 0.5) * 0.34;
+    walker.vy += (Math.random() - 0.5) * 0.34;
+    normalizeWalkerSpeed();
+    break;
+  }
+}
+
+function getWalkerBounds() {
+  const rect = pokemonWalker.getBoundingClientRect();
+  return {
+    left: walker.x + rect.width * 0.18,
+    top: walker.y + rect.height * 0.2,
+    right: walker.x + rect.width * 0.82,
+    bottom: walker.y + rect.height * 0.82,
+    width: rect.width * 0.64,
+    height: rect.height * 0.62,
+  };
+}
+
+function getCollisionObstacles() {
+  return Array.from(
+    document.querySelectorAll(
+      ".wordmark, .site-header nav a, .market-strip, .social-icons a, .portrait-shell, .hero-copy, .contact-action, .about-copy, .focus-panel, .books-section > p, .section-heading"
+    )
+  )
+    .map((target) => ({ target, rect: target.getBoundingClientRect() }))
+    .filter(({ target, rect }) => {
+      if (target === pokemonWalker || target === pokeballRelease) return false;
+      return rect.width > 0 && rect.height > 0 && rect.bottom > 0 && rect.top < window.innerHeight;
+    })
+    .map(({ target, rect }) => ({
+      target,
+      left: rect.left - 6,
+      top: rect.top - 6,
+      right: rect.right + 6,
+      bottom: rect.bottom + 6,
+    }));
+}
+
+function getOverlap(a, b) {
+  const x = Math.min(a.right, b.right) - Math.max(a.left, b.left);
+  const y = Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top);
+  return x > 0 && y > 0 ? { x, y } : null;
+}
+
+function normalizeWalkerSpeed() {
+  const speed = Math.hypot(walker.vx, walker.vy);
+  const target = Math.min(2.65, Math.max(1.45, speed));
+  walker.vx = (walker.vx / speed) * target;
+  walker.vy = (walker.vy / speed) * target;
+}
+
+function setWalkerPosition() {
+  const bob = Math.sin(performance.now() / 140) * 5;
+  pokemonWalker.style.setProperty("--x", `${walker.x}px`);
+  pokemonWalker.style.setProperty("--y", `${walker.y + bob}px`);
+  pokemonWalker.style.setProperty("--facing", walker.facing);
+}
+
+pokeballRelease.addEventListener("click", releasePokemon);
+pokemonWalker.addEventListener("animationend", () => pokemonWalker.classList.remove("is-popping"));
+pokemonWalker.addEventListener("pointerenter", launchWalker);
 
 const typedIntro = document.getElementById("typedIntro");
 const introText = "Hello, Nick Here.";

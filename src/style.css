@@ -230,6 +230,11 @@ a {
   fill: currentColor;
 }
 
+.social-icons .pokeball-release {
+  width: 42px;
+  height: 42px;
+}
+
 @keyframes ticker-scroll {
   from {
     transform: translateX(0);
@@ -254,6 +259,147 @@ a {
   width: 100%;
   height: 100%;
   pointer-events: none;
+}
+
+.pokeball-release {
+  position: relative;
+  z-index: 21;
+  flex: 0 0 auto;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+  filter:
+    drop-shadow(0 12px 22px rgba(0, 0, 0, 0.34))
+    drop-shadow(0 0 12px rgba(89, 241, 215, 0.12));
+  animation: pokeball-shake 1.25s ease-in-out infinite;
+}
+
+.pokeball-release img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  image-rendering: pixelated;
+  pointer-events: none;
+}
+
+.pokeball-release:hover {
+  animation-duration: 0.48s;
+}
+
+.pokeball-release.is-open {
+  animation: pokeball-open 0.7s ease both;
+}
+
+.pokemon-walker {
+  --x: calc(100vw - 150px);
+  --y: 120px;
+  --facing: 1;
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 30;
+  width: 130px;
+  height: 130px;
+  display: grid;
+  place-items: center;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(var(--x), var(--y)) scaleX(var(--facing));
+  transition: opacity 0.25s ease;
+  will-change: transform;
+}
+
+.pokemon-walker.is-released {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.pokemon-walker img {
+  width: 116px;
+  height: 116px;
+  object-fit: contain;
+  image-rendering: pixelated;
+  filter:
+    saturate(1.08)
+    contrast(1.04)
+    drop-shadow(0 14px 12px rgba(0, 0, 0, 0.38))
+    drop-shadow(0 0 12px rgba(89, 241, 215, 0.12));
+}
+
+.pokemon-walker[data-size="sm"] img {
+  width: 104px;
+  height: 104px;
+}
+
+.pokemon-walker[data-size="lg"] img {
+  width: 136px;
+  height: 136px;
+}
+
+.pokemon-walker.is-popping img {
+  animation: pokemon-pop 0.55s cubic-bezier(0.2, 0.9, 0.2, 1.18);
+}
+
+@keyframes pokeball-shake {
+  0%,
+  68%,
+  100% {
+    transform: rotate(0deg);
+  }
+
+  72% {
+    transform: rotate(-13deg) translateX(-2px);
+  }
+
+  78% {
+    transform: rotate(13deg) translateX(2px);
+  }
+
+  84% {
+    transform: rotate(-9deg) translateX(-1px);
+  }
+
+  90% {
+    transform: rotate(8deg) translateX(1px);
+  }
+}
+
+@keyframes pokeball-open {
+  0% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+
+  42% {
+    opacity: 1;
+    transform: scale(1.15) rotate(-16deg);
+  }
+
+  100% {
+    opacity: 0.72;
+    transform: scale(0.9) rotate(14deg);
+  }
+}
+
+@keyframes pokemon-pop {
+  0% {
+    opacity: 0;
+    transform: translateY(-18px) scale(0.35) rotate(-9deg);
+  }
+
+  62% {
+    opacity: 1;
+    transform: translateY(5px) scale(1.14) rotate(5deg);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1) rotate(0deg);
+  }
 }
 
 .hero-inner {
@@ -508,6 +654,19 @@ p {
 
   .hero {
     padding-top: 22px;
+  }
+
+  .pokeball-release {
+    width: 40px;
+    height: 40px;
+  }
+
+  .pokemon-walker,
+  .pokemon-walker img,
+  .pokemon-walker[data-size="sm"] img,
+  .pokemon-walker[data-size="lg"] img {
+    width: 92px;
+    height: 92px;
   }
 
   .hero-inner {
