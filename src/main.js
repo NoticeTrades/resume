@@ -122,7 +122,7 @@ function initPortrait() {
   const canvasHeight = Math.max(1, Math.round(heroRect.height));
   const portraitWidth = Math.max(1, Math.round(portraitRect.width));
   const portraitHeight = Math.max(1, Math.round(portraitRect.height));
-  const sample = 5;
+  const sample = 6;
 
   canvas.width = canvasWidth;
   canvas.height = canvasHeight;
@@ -165,8 +165,11 @@ function initPortrait() {
           homeY,
           vx: 0,
           vy: 0,
-          size: (sample * 0.32 + (brightness / 255) * 1.85) * Math.min(1, mask * 1.55),
-          color: `rgba(${Math.round(red * 0.24)}, ${teal}, ${Math.min(255, blue + 40)}, ${(0.42 + brightness / 620) * Math.min(1, mask * 1.35)})`,
+          angle: ((x / sample + y / sample) % 7) * 0.08 - 0.24,
+          spin: 0,
+          shape: (x / sample + y / sample) % 4,
+          size: (sample * 0.78 + (brightness / 255) * 1.1) * Math.min(1, mask * 1.45),
+          color: `rgba(${Math.round(red * 0.24)}, ${teal}, ${Math.min(255, blue + 40)}, ${(0.5 + brightness / 620) * Math.min(1, mask * 1.35)})`,
         });
       }
     }
@@ -231,29 +234,54 @@ function animatePortrait() {
       const dx = pixel.x - pointer.x;
       const dy = pixel.y - pointer.y;
       const distance = Math.hypot(dx, dy);
-      const radius = 100;
+      const radius = 170;
       if (distance < radius) {
-        const force = (1 - distance / radius) * 7;
-        const angle = Math.atan2(dy, dx);
+        const force = (1 - distance / radius) * 14;
+        const angle = Math.atan2(dy, dx) + Math.sin(distance * 0.08) * 0.65;
         pixel.vx += Math.cos(angle) * force;
         pixel.vy += Math.sin(angle) * force;
+        pixel.spin += (1 - distance / radius) * 0.16;
       }
     }
 
-    pixel.vx += (pixel.homeX - pixel.x) * 0.024;
-    pixel.vy += (pixel.homeY - pixel.y) * 0.024;
-    pixel.vx *= 0.85;
-    pixel.vy *= 0.85;
+    pixel.vx += (pixel.homeX - pixel.x) * 0.03;
+    pixel.vy += (pixel.homeY - pixel.y) * 0.03;
+    pixel.vx *= 0.8;
+    pixel.vy *= 0.8;
+    pixel.spin *= 0.86;
+    pixel.angle *= 0.96;
     pixel.x += pixel.vx;
     pixel.y += pixel.vy;
 
-    ctx.fillStyle = pixel.color;
-    ctx.beginPath();
-    ctx.arc(pixel.x, pixel.y, pixel.size, 0, Math.PI * 2);
-    ctx.fill();
+    drawPuzzlePiece(pixel);
   }
 
   animationId = requestAnimationFrame(animatePortrait);
+}
+
+function drawPuzzlePiece(pixel) {
+  const size = pixel.size;
+  const knob = size * 0.24;
+  ctx.save();
+  ctx.translate(pixel.x, pixel.y);
+  ctx.rotate(pixel.angle + pixel.spin);
+  ctx.fillStyle = pixel.color;
+  ctx.beginPath();
+  ctx.moveTo(-size / 2, -size / 2);
+  ctx.lineTo(-knob, -size / 2);
+  if (pixel.shape % 2 === 0) ctx.arc(0, -size / 2, knob, Math.PI, 0, false);
+  ctx.lineTo(size / 2, -size / 2);
+  ctx.lineTo(size / 2, -knob);
+  if (pixel.shape % 3 === 0) ctx.arc(size / 2, 0, knob, -Math.PI / 2, Math.PI / 2, false);
+  ctx.lineTo(size / 2, size / 2);
+  ctx.lineTo(knob, size / 2);
+  if (pixel.shape % 2 === 1) ctx.arc(0, size / 2, knob, 0, Math.PI, false);
+  ctx.lineTo(-size / 2, size / 2);
+  ctx.lineTo(-size / 2, knob);
+  if (pixel.shape % 3 === 1) ctx.arc(-size / 2, 0, knob, Math.PI / 2, -Math.PI / 2, false);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
 }
 
 function updatePointer(event) {
