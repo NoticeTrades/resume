@@ -489,6 +489,15 @@ const walker = {
   facing: 1,
   frameId: null,
   lastTime: 0,
+  pointerX: 0,
+  pointerY: 0,
+  pointerActive: false,
+  dragging: false,
+  dragOffsetX: 0,
+  dragOffsetY: 0,
+  dragLastX: 0,
+  dragLastY: 0,
+  dragLastTime: 0,
 };
 
 function pickPokemon() {
@@ -536,51 +545,54 @@ function animateWalker(time) {
 
   const dt = Math.min(2.2, Math.max(0.75, (time - (walker.lastTime || time)) / 16.67));
   walker.lastTime = time;
-  walker.x += walker.vx * dt;
-  walker.y += walker.vy * dt;
-  handleWalkerCollisions();
+
+  if (!walker.dragging) {
+    applyCursorPush();
+    walker.x += walker.vx * dt;
+    walker.y += walker.vy * dt;
+    handleWalkerCollisions();
+  } else {
+    disturbPortraitOnWalkerOverlap(getWalkerBounds());
+  }
+
   walker.facing = walker.vx >= 0 ? 1 : -1;
   setWalkerPosition();
   walker.frameId = requestAnimationFrame(animateWalker);
 }
 
+function applyCursorPush() {
+  if (!walker.pointerActive) return;
+
+  const bounds = getWalkerBounds();
+  const centerX = bounds.left + bounds.width / 2;
+  const centerY = bounds.top + bounds.height / 2;
+  const dx = centerX - walker.pointerX;
+  const dy = centerY - walker.pointerY;
+  const distance = Math.hypot(dx, dy);
+  const radius = 132;
+
+  if (distance >= radius || distance < 1) return;
+
+  const falloff = (1 - distance / radius) ** 2;
+  const force = 0.38 + falloff * 1.18;
+  walker.vx += (dx / distance) * force;
+  walker.vy += (dy / distance) * force;
+  normalizeWalkerSpeed(3.25);
+}
+
 function handleWalkerCollisions() {
   const bounds = getWalkerBounds();
-  const padding = 8;
-  const maxX = window.innerWidth - bounds.width - padding;
-  const maxY = window.innerHeight - bounds.height - padding;
+  const viewportHit = clampWalkerToViewport(bounds);
 
-  if (walker.x < padding) {
-    walker.x = padding;
-    walker.vx = Math.abs(walker.vx);
-  } else if (walker.x > maxX) {
-    walker.x = maxX;
-    walker.vx = -Math.abs(walker.vx);
-  }
-
-  if (walker.y < 70) {
-    walker.y = 70;
-    walker.vy = Math.abs(walker.vy);
-  } else if (walker.y > maxY) {
-    walker.y = maxY;
-    walker.vy = -Math.abs(walker.vy);
-  }
+  if (viewportHit.x) walker.vx = Math.abs(walker.vx) * viewportHit.x;
+  if (viewportHit.y) walker.vy = Math.abs(walker.vy) * viewportHit.y;
 
   const walkerRect = getWalkerBounds();
+  disturbPortraitOnWalkerOverlap(walkerRect);
+
   for (const obstacle of getCollisionObstacles()) {
     const overlap = getOverlap(walkerRect, obstacle);
     if (!overlap) continue;
-
-    const portraitRect = portraitShell.getBoundingClientRect();
-    if (obstacle.target === portraitShell) {
-      const heroRect = hero.getBoundingClientRect();
-      disturbPortrait(
-        walkerRect.left + walkerRect.width / 2 - heroRect.left,
-        walkerRect.top + walkerRect.height / 2 - heroRect.top,
-        118,
-        5.8
-      );
-    }
 
     if (overlap.x < overlap.y) {
       walker.x += walkerRect.left < obstacle.left ? -overlap.x - 2 : overlap.x + 2;
@@ -595,6 +607,51 @@ function handleWalkerCollisions() {
     normalizeWalkerSpeed();
     break;
   }
+}
+
+function clampWalkerToViewport(bounds = getWalkerBounds()) {
+  const padding = 8;
+  const maxX = window.innerWidth - bounds.width - padding;
+  const maxY = window.innerHeight - bounds.height - padding;
+  const hit = { x: 0, y: 0 };
+
+  if (walker.x < padding) {
+    walker.x = padding;
+    hit.x = 1;
+  } else if (walker.x > maxX) {
+    walker.x = maxX;
+    hit.x = -1;
+  }
+
+  if (walker.y < 70) {
+    walker.y = 70;
+    hit.y = 1;
+  } else if (walker.y > maxY) {
+    walker.y = maxY;
+    hit.y = -1;
+  }
+
+  return hit;
+}
+
+function disturbPortraitOnWalkerOverlap(walkerRect) {
+  const portraitRect = portraitShell.getBoundingClientRect();
+  const overlap = getOverlap(walkerRect, {
+    left: portraitRect.left,
+    top: portraitRect.top,
+    right: portraitRect.right,
+    bottom: portraitRect.bottom,
+  });
+
+  if (!overlap) return;
+
+  const heroRect = hero.getBoundingClientRect();
+  disturbPortrait(
+    walkerRect.left + walkerRect.width / 2 - heroRect.left,
+    walkerRect.top + walkerRect.height / 2 - heroRect.top,
+    128,
+    6.2
+  );
 }
 
 function getWalkerBounds() {
@@ -612,7 +669,7 @@ function getWalkerBounds() {
 function getCollisionObstacles() {
   return Array.from(
     document.querySelectorAll(
-      ".wordmark, .site-header nav a, .market-strip, .social-icons a, .portrait-shell, .hero-copy, .contact-action, .about-copy, .focus-panel, .books-section > p, .section-heading"
+      ".wordmark, .site-header nav a, .market-strip, .social-icons a, .hero-copy, .contact-action, .about-copy, .focus-panel, .books-section > p, .section-heading"
     )
   )
     .map((target) => ({ target, rect: target.getBoundingClientRect() }))
@@ -635,9 +692,13 @@ function getOverlap(a, b) {
   return x > 0 && y > 0 ? { x, y } : null;
 }
 
-function normalizeWalkerSpeed() {
+function normalizeWalkerSpeed(maxSpeed = 2.65) {
   const speed = Math.hypot(walker.vx, walker.vy);
-  const target = Math.min(2.65, Math.max(1.45, speed));
+  if (speed < 0.01) {
+    launchWalker();
+    return;
+  }
+  const target = Math.min(maxSpeed, Math.max(1.45, speed));
   walker.vx = (walker.vx / speed) * target;
   walker.vy = (walker.vy / speed) * target;
 }
@@ -652,6 +713,55 @@ function setWalkerPosition() {
 pokeballRelease.addEventListener("click", releasePokemon);
 pokemonWalker.addEventListener("animationend", () => pokemonWalker.classList.remove("is-popping"));
 pokemonWalker.addEventListener("pointerenter", launchWalker);
+pokemonWalker.addEventListener("pointerdown", startPokemonDrag);
+window.addEventListener("pointermove", updatePokemonPointer);
+window.addEventListener("pointerup", endPokemonDrag);
+window.addEventListener("pointercancel", endPokemonDrag);
+
+function updatePokemonPointer(event) {
+  walker.pointerX = event.clientX;
+  walker.pointerY = event.clientY;
+  walker.pointerActive = true;
+
+  if (!walker.dragging) return;
+
+  const now = performance.now();
+  const previousX = walker.x;
+  const previousY = walker.y;
+  walker.x = event.clientX - walker.dragOffsetX;
+  walker.y = event.clientY - walker.dragOffsetY;
+  walker.vx = (walker.x - previousX) * 0.22;
+  walker.vy = (walker.y - previousY) * 0.22;
+  walker.dragLastX = event.clientX;
+  walker.dragLastY = event.clientY;
+  walker.dragLastTime = now;
+  clampWalkerToViewport();
+  setWalkerPosition();
+}
+
+function startPokemonDrag(event) {
+  if (!walker.released) return;
+
+  const rect = pokemonWalker.getBoundingClientRect();
+  walker.dragging = true;
+  walker.dragOffsetX = event.clientX - rect.left;
+  walker.dragOffsetY = event.clientY - rect.top;
+  walker.dragLastX = event.clientX;
+  walker.dragLastY = event.clientY;
+  walker.dragLastTime = performance.now();
+  pokemonWalker.classList.add("is-dragging");
+  pokemonWalker.setPointerCapture?.(event.pointerId);
+  event.preventDefault();
+}
+
+function endPokemonDrag(event) {
+  if (!walker.dragging) return;
+
+  walker.dragging = false;
+  pokemonWalker.classList.remove("is-dragging");
+  pokemonWalker.releasePointerCapture?.(event.pointerId);
+  normalizeWalkerSpeed(3.1);
+}
 
 const typedIntro = document.getElementById("typedIntro");
 const introText = "Hello, Nick Here.";
