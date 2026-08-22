@@ -126,7 +126,7 @@ function initPortrait() {
   const canvasHeight = Math.max(1, Math.round(heroRect.height));
   const portraitWidth = Math.max(1, Math.round(portraitRect.width));
   const portraitHeight = Math.max(1, Math.round(portraitRect.height));
-  const sample = 9;
+  const sample = 8;
 
   canvas.width = canvasWidth;
   canvas.height = canvasHeight;
@@ -163,20 +163,20 @@ function initPortrait() {
         const homeX = offsetX + x;
         const homeY = offsetY + y;
         const introAngle = Math.random() * Math.PI * 2;
-        const introDistance = 180 + Math.random() * Math.max(canvasWidth, canvasHeight) * 0.55;
+        const introDistance = 140 + Math.random() * Math.max(canvasWidth, canvasHeight) * 0.42;
         pixels.push({
           x: homeX + Math.cos(introAngle) * introDistance,
           y: homeY + Math.sin(introAngle) * introDistance,
           homeX,
           homeY,
-          vx: (Math.random() - 0.5) * 10,
-          vy: (Math.random() - 0.5) * 10,
+          vx: (Math.random() - 0.5) * 5,
+          vy: (Math.random() - 0.5) * 5,
           angle: Math.random() * Math.PI * 2,
           homeAngle: ((x / sample + y / sample) % 7) * 0.045 - 0.135,
-          spin: (Math.random() - 0.5) * 0.45,
+          spin: (Math.random() - 0.5) * 0.24,
           shape: (x / sample + y / sample) % 4,
-          size: (sample * 1.04 + (brightness / 255) * 1.8) * Math.min(1, mask * 1.35),
-          color: `rgba(${Math.round(red * 0.28)}, ${teal}, ${Math.min(255, blue + 44)}, ${(0.62 + brightness / 680) * Math.min(1, mask * 1.25)})`,
+          size: (sample * 1.02 + (brightness / 255) * 1.3) * Math.min(1, mask * 1.32),
+          color: `rgba(${Math.round(red * 0.3)}, ${teal}, ${Math.min(255, blue + 44)}, ${(0.7 + brightness / 760) * Math.min(1, mask * 1.2)})`,
         });
       }
     }
@@ -185,7 +185,7 @@ function initPortrait() {
   cancelAnimationFrame(animationId);
   introTimer = setTimeout(() => {
     introAssembling = false;
-  }, 1400);
+  }, 2600);
   animatePortrait();
 }
 
@@ -230,10 +230,10 @@ function scatterPortrait(event) {
     const dy = pixel.homeY - clickY;
     const angle = Math.atan2(dy, dx) + (Math.random() - 0.5) * 1.25;
     const distance = Math.max(24, Math.hypot(dx, dy));
-    const burst = 30 + Math.random() * 46 + Math.max(0, 340 - distance) * 0.2;
-    pixel.vx += Math.cos(angle) * burst + (Math.random() - 0.5) * 26;
-    pixel.vy += Math.sin(angle) * burst + (Math.random() - 0.5) * 26;
-    pixel.spin += (Math.random() - 0.5) * 1.2;
+    const burst = 18 + Math.random() * 24 + Math.max(0, 300 - distance) * 0.08;
+    pixel.vx += Math.cos(angle) * burst + (Math.random() - 0.5) * 10;
+    pixel.vy += Math.sin(angle) * burst + (Math.random() - 0.5) * 10;
+    pixel.spin += (Math.random() - 0.5) * 0.55;
   }
 }
 
@@ -245,24 +245,26 @@ function animatePortrait() {
       const dx = pixel.x - pointer.x;
       const dy = pixel.y - pointer.y;
       const distance = Math.hypot(dx, dy);
-      const radius = 240;
+      const radius = 190;
       if (distance < radius) {
-        const force = (1 - distance / radius) * 28;
-        const angle = Math.atan2(dy, dx) + Math.sin(distance * 0.08) * 0.85;
+        const falloff = 1 - distance / radius;
+        const centerSoftener = distance < 34 ? distance / 34 : 1;
+        const force = falloff * centerSoftener * 13;
+        const angle = Math.atan2(dy, dx) + Math.sin(distance * 0.06) * 0.48;
         pixel.vx += Math.cos(angle) * force;
         pixel.vy += Math.sin(angle) * force;
-        pixel.spin += (1 - distance / radius) * 0.38;
+        pixel.spin += falloff * 0.14;
       }
     }
 
-    const pull = introAssembling ? 0.018 : 0.038;
-    const friction = introAssembling ? 0.88 : 0.78;
+    const pull = introAssembling ? 0.012 : 0.046;
+    const friction = introAssembling ? 0.91 : 0.74;
     pixel.vx += (pixel.homeX - pixel.x) * pull;
     pixel.vy += (pixel.homeY - pixel.y) * pull;
     pixel.vx *= friction;
     pixel.vy *= friction;
-    pixel.spin *= 0.84;
-    pixel.angle += (pixel.homeAngle - pixel.angle) * 0.055 + pixel.spin;
+    pixel.spin *= 0.8;
+    pixel.angle += (pixel.homeAngle - pixel.angle) * 0.075 + pixel.spin;
     pixel.x += pixel.vx;
     pixel.y += pixel.vy;
 
@@ -279,10 +281,10 @@ function drawPuzzlePiece(pixel) {
   ctx.translate(pixel.x, pixel.y);
   ctx.rotate(pixel.angle);
   ctx.fillStyle = pixel.color;
-  ctx.strokeStyle = "rgba(7, 23, 43, 0.46)";
-  ctx.lineWidth = Math.max(0.75, size * 0.08);
-  ctx.shadowColor = "rgba(89, 241, 215, 0.24)";
-  ctx.shadowBlur = size * 0.36;
+  ctx.strokeStyle = "rgba(6, 19, 37, 0.82)";
+  ctx.lineWidth = Math.max(1, size * 0.11);
+  ctx.shadowColor = "rgba(89, 241, 215, 0.1)";
+  ctx.shadowBlur = size * 0.08;
   ctx.beginPath();
   ctx.moveTo(-size / 2, -size / 2);
   ctx.lineTo(-knob, -size / 2);
@@ -312,7 +314,6 @@ function updatePointer(event) {
 portraitShell.addEventListener("pointermove", updatePointer);
 portraitShell.addEventListener("pointerenter", (event) => {
   updatePointer(event);
-  scatterPortrait(event);
 });
 portraitShell.addEventListener("pointerleave", () => {
   pointer.active = false;
