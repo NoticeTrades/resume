@@ -136,7 +136,7 @@ function initPortrait() {
   const canvasHeight = Math.max(1, Math.round(heroRect.height));
   const portraitWidth = Math.max(1, Math.round(portraitRect.width));
   const portraitHeight = Math.max(1, Math.round(portraitRect.height));
-  const sample = 11;
+  const sample = 9;
 
   canvas.width = canvasWidth;
   canvas.height = canvasHeight;
@@ -182,11 +182,11 @@ function initPortrait() {
           vx: (Math.random() - 0.5) * 3,
           vy: (Math.random() - 0.5) * 3,
           angle: Math.random() * Math.PI * 2,
-          homeAngle: ((x / sample + y / sample) % 7) * 0.045 - 0.135,
+          homeAngle: ((x / sample + y / sample) % 7) * 0.025 - 0.075,
           spin: (Math.random() - 0.5) * 0.24,
           shape: Math.round(x / sample + y / sample) % 4,
-          size: (sample * 1.06 + (brightness / 255) * 1.1) * Math.min(1, mask * 1.25),
-          color: `rgba(${Math.round(red * 0.34)}, ${teal}, ${Math.min(255, blue + 44)}, ${(0.76 + brightness / 820) * Math.min(1, mask * 1.16)})`,
+          size: (sample * 1 + (brightness / 255) * 1) * Math.min(1, mask * 1.22),
+          color: `rgba(${Math.round(red * 0.38)}, ${Math.min(255, teal + 8)}, ${Math.min(255, blue + 52)}, ${(0.8 + brightness / 900) * Math.min(1, mask * 1.12)})`,
         });
       }
     }
@@ -286,14 +286,15 @@ function animatePortrait() {
 
 function drawPuzzlePiece(pixel) {
   const size = pixel.size;
-  const notch = size * 0.18;
-  const tab = size * 0.12;
+  const notch = size * 0.14;
+  const tab = size * 0.13;
   ctx.save();
   ctx.translate(pixel.x, pixel.y);
   ctx.rotate(pixel.angle);
   ctx.fillStyle = pixel.color;
-  ctx.strokeStyle = "rgba(6, 19, 37, 0.7)";
-  ctx.lineWidth = 1;
+  ctx.strokeStyle = "rgba(6, 19, 37, 0.52)";
+  ctx.lineWidth = 0.75;
+  ctx.lineJoin = "round";
   ctx.shadowBlur = 0;
   ctx.beginPath();
   ctx.moveTo(-size / 2, -size / 2);
