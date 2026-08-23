@@ -15,7 +15,7 @@ function renderHeader() {
         <nav aria-label="Main navigation">
           <a href="/">Home</a>
           <a href="/#about">About</a>
-          <a href="/writing/" aria-current="page">Writing</a>
+          <a href="/writing/" aria-current="page">Musings</a>
           <a href="mailto:nickthomasfx@gmail.com">Contact</a>
         </nav>
       </div>
@@ -39,14 +39,16 @@ function renderArticleCard(article, index) {
       data-category="${escapeHtml(article.category)}"
       style="--reveal-delay: ${index * 80}ms"
     >
-      <span class="writing-card-index">0${index + 1}</span>
       <div class="writing-card-copy">
-        <span class="writing-category">${escapeHtml(article.category)}</span>
+        <div class="writing-card-topline">
+          <span class="writing-category">${escapeHtml(article.category)}</span>
+          <span class="writing-card-mark" aria-hidden="true">✦</span>
+        </div>
         <h2>${escapeHtml(article.title)}</h2>
         <p>${escapeHtml(article.excerpt)}</p>
         <span class="writing-meta">${escapeHtml(article.displayDate)} · ${escapeHtml(article.readTime)}</span>
+        <span class="writing-card-cta">Read musing <span aria-hidden="true">↗</span></span>
       </div>
-      <span class="writing-arrow" aria-hidden="true">↗</span>
     </a>
   `;
 }
@@ -57,18 +59,18 @@ function renderLibrary() {
   return `
     <main class="writing-page">
       <section class="writing-page-hero reveal-on-scroll">
-        <p class="section-kicker">Nicholas Thomas / journal</p>
-        <h1>Signals <span>&</span> Notes</h1>
+        <p class="section-kicker">thoughts without a fixed category</p>
+        <h1>Nick's <span>Musings</span></h1>
         <p>
-          Writing about markets, finance, technology, creative work, and the lessons
-          that appear somewhere between planning and living.
+          Philosophy, market ideas, books, technology, useful tools, personal
+          observations, and whatever else I find worth thinking through.
         </p>
       </section>
 
       <section class="writing-library" aria-labelledby="writingLibraryTitle">
         <div class="writing-library-heading reveal-on-scroll">
-          <h2 id="writingLibraryTitle">Latest writing</h2>
-          <p>These sample entries will be replaced by articles published through Sanity.</p>
+          <h2 id="writingLibraryTitle">Latest musings</h2>
+          <p>A growing collection of ideas, observations, experiments, and things learned along the way.</p>
         </div>
         <div class="writing-filters reveal-on-scroll" aria-label="Filter writing by category">
           ${categories

@@ -1,4 +1,4 @@
-# Signals & Notes Studio
+# Nick's Musings Studio
 
 This private editorial workspace publishes articles to the `production` dataset in Sanity project `vzrug3c0`.
 

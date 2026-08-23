@@ -32,14 +32,16 @@ function renderFeaturedWritingCards(source) {
         href="/writing/?article=${encodeURIComponent(article.slug)}"
         style="--reveal-delay: ${index * 90}ms"
       >
-        <span class="writing-card-index">0${index + 1}</span>
         <div class="writing-card-copy">
-          <span class="writing-category">${escapeHtml(article.category)}</span>
+          <div class="writing-card-topline">
+            <span class="writing-category">${escapeHtml(article.category)}</span>
+            <span class="writing-card-mark" aria-hidden="true">✦</span>
+          </div>
           <h3>${escapeHtml(article.title)}</h3>
           <p>${escapeHtml(article.excerpt)}</p>
           <span class="writing-meta">${escapeHtml(article.displayDate)} · ${escapeHtml(article.readTime)}</span>
+          <span class="writing-card-cta">Read musing <span aria-hidden="true">↗</span></span>
         </div>
-        <span class="writing-arrow" aria-hidden="true">↗</span>
       </a>
     `
   )
@@ -55,7 +57,7 @@ app.innerHTML = `
       <nav aria-label="Main navigation">
         <a href="#home">Home</a>
         <a href="#about">About</a>
-        <a href="/writing/">Writing</a>
+        <a href="/writing/">Musings</a>
         <a href="mailto:nickthomasfx@gmail.com">Contact</a>
       </nav>
     </div>
@@ -137,20 +139,20 @@ app.innerHTML = `
     <section class="writing-section reveal-on-scroll" id="writing">
       <div class="section-heading writing-heading">
         <div>
-          <p class="section-kicker">ideas in progress</p>
-          <h2>featured writing</h2>
+          <p class="section-kicker">thoughts, observations & ideas</p>
+          <h2>Nick's Musings</h2>
         </div>
         <span></span>
       </div>
       <p class="writing-intro reveal-on-scroll">
-        Market observations, lessons from building, and notes about the ideas that
-        shape how I see work and life.
+        A place for whatever has my attention: markets, philosophy, technology,
+        books, useful tools, personal observations, and life as it unfolds.
       </p>
       <div class="writing-grid" id="featuredWritingGrid">
         ${featuredWritingCards}
       </div>
       <a class="view-writing-action reveal-on-scroll" href="/writing/">
-        Explore all writing <span aria-hidden="true">→</span>
+        Explore all musings <span aria-hidden="true">→</span>
       </a>
     </section>
   </main>

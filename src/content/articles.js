@@ -1,10 +1,10 @@
 export const articles = [
   {
-    slug: "reading-markets-without-predicting-them",
-    title: "Reading Markets Without Predicting Them",
-    category: "Markets",
+    slug: "the-quiet-value-of-changing-your-mind",
+    title: "The Quiet Value of Changing Your Mind",
+    category: "Philosophy",
     excerpt:
-      "A sample space for thinking about preparation, uncertainty, and responding to what the market actually gives us.",
+      "A sample space for thinking about identity, uncertainty, and why changing your mind can be a sign of growth rather than inconsistency.",
     displayDate: "Sample article",
     readTime: "6 min read",
     featured: true,
@@ -15,11 +15,11 @@ export const articles = [
     ],
   },
   {
-    slug: "forecasting-and-the-art-of-uncertainty",
-    title: "Forecasting and the Art of Uncertainty",
-    category: "Finance",
+    slug: "what-i-notice-when-i-slow-down",
+    title: "What I Notice When I Slow Down",
+    category: "Personal",
     excerpt:
-      "A placeholder for lessons drawn from financial planning, operating assumptions, and making useful decisions with incomplete information.",
+      "A placeholder for honest observations about attention, ambition, daily routines, and the parts of life that are easy to overlook.",
     displayDate: "Sample article",
     readTime: "5 min read",
     featured: true,
@@ -30,11 +30,11 @@ export const articles = [
     ],
   },
   {
-    slug: "notes-on-building-better-systems",
-    title: "Notes on Building Better Systems",
-    category: "Life & Technology",
+    slug: "tools-that-earn-a-place-in-my-workflow",
+    title: "Tools That Earn a Place in My Workflow",
+    category: "AI & Tools",
     excerpt:
-      "A home for ideas about learning, automation, creative work, and the systems that make consistent progress possible.",
+      "A home for practical notes about AI, automation, books, software, and the experiments that genuinely change how I work.",
     displayDate: "Sample article",
     readTime: "4 min read",
     featured: true,

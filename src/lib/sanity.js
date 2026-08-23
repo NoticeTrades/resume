@@ -24,6 +24,13 @@ const articleQuery = `
         "url": asset->url,
         alt,
         caption
+      },
+      _type == "video" => {
+        "url": asset->url,
+        "mimeType": asset->mimeType,
+        title,
+        caption,
+        "posterUrl": poster.asset->url
       }
     }
   }
@@ -73,6 +80,18 @@ export function renderPortableText(body = []) {
             ? `<figcaption>${escapeHtml(value.caption)}</figcaption>`
             : "";
           return `<figure><img src="${escapeHtml(value.url)}" alt="${alt}" loading="lazy" />${caption}</figure>`;
+        },
+        video: ({ value }) => {
+          if (!value?.url) return "";
+          const title = escapeHtml(value.title || "Article video");
+          const poster = value.posterUrl ? ` poster="${escapeHtml(value.posterUrl)}"` : "";
+          const mimeType = value.mimeType
+            ? ` type="${escapeHtml(value.mimeType)}"`
+            : "";
+          const caption = value.caption
+            ? `<figcaption>${escapeHtml(value.caption)}</figcaption>`
+            : "";
+          return `<figure class="article-video"><video controls preload="metadata"${poster} aria-label="${title}"><source src="${escapeHtml(value.url)}"${mimeType} />Your browser does not support embedded video.</video>${caption}</figure>`;
         },
       },
       marks: {

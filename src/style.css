@@ -672,7 +672,9 @@ p {
   width: min(420px, 42vw);
   height: 260px;
   border-radius: 50%;
-  background: rgba(89, 241, 215, 0.045);
+  background:
+    radial-gradient(circle at 35% 50%, rgba(139, 115, 255, 0.12), transparent 55%),
+    rgba(89, 241, 215, 0.035);
   filter: blur(70px);
   pointer-events: none;
 }
@@ -713,14 +715,14 @@ p {
 .writing-card {
   position: relative;
   min-height: 260px;
-  display: flex;
-  gap: 22px;
+  display: block;
   padding: 30px;
   overflow: hidden;
   border: 1px solid rgba(148, 169, 209, 0.16);
-  border-radius: 12px;
+  border-radius: 20px;
   background:
-    linear-gradient(145deg, rgba(89, 241, 215, 0.055), transparent 46%),
+    radial-gradient(circle at 100% 0%, rgba(139, 115, 255, 0.12), transparent 42%),
+    linear-gradient(145deg, rgba(89, 241, 215, 0.045), transparent 48%),
     var(--panel);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035);
   transition:
@@ -739,48 +741,63 @@ p {
 .writing-card::after {
   content: "";
   position: absolute;
-  left: -35%;
-  right: -35%;
-  bottom: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, var(--aqua), transparent);
-  opacity: 0;
-  transform: translateX(-35%);
-  transition: opacity 0.25s ease, transform 0.55s ease;
+  right: -45px;
+  bottom: -70px;
+  width: 170px;
+  height: 170px;
+  border-radius: 50%;
+  background: rgba(89, 241, 215, 0.08);
+  filter: blur(46px);
+  opacity: 0.35;
+  transition: opacity 0.25s ease, transform 0.45s ease;
 }
 
 .writing-card:hover {
   transform: translateY(-5px);
   border-color: rgba(89, 241, 215, 0.4);
   background:
-    linear-gradient(145deg, rgba(89, 241, 215, 0.1), transparent 48%),
+    radial-gradient(circle at 100% 0%, rgba(139, 115, 255, 0.16), transparent 44%),
+    linear-gradient(145deg, rgba(89, 241, 215, 0.08), transparent 48%),
     var(--panel-strong);
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.18);
 }
 
 .writing-card:hover::after {
-  opacity: 0.8;
-  transform: translateX(35%);
-}
-
-.writing-card-index {
-  color: rgba(89, 241, 215, 0.54);
-  font-family: Oxanium, Sora, sans-serif;
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 0.12em;
+  opacity: 0.7;
+  transform: scale(1.15);
 }
 
 .writing-card-copy {
+  position: relative;
+  z-index: 1;
   align-self: center;
 }
 
+.writing-card-topline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
 .writing-category {
-  color: var(--aqua);
+  display: inline-flex;
+  padding: 7px 10px;
+  border: 1px solid rgba(89, 241, 215, 0.18);
+  border-radius: 999px;
+  background: rgba(89, 241, 215, 0.055);
+  color: #b8f9ee;
   font-size: 11px;
   font-weight: 800;
-  letter-spacing: 0.13em;
+  letter-spacing: 0.09em;
   text-transform: uppercase;
+}
+
+.writing-card-mark {
+  color: rgba(170, 151, 255, 0.75);
+  font-size: 20px;
+  line-height: 1;
+  transition: color 0.2s ease, transform 0.35s ease;
 }
 
 .writing-card h3 {
@@ -799,6 +816,7 @@ p {
 }
 
 .writing-meta {
+  display: block;
   color: rgba(195, 204, 229, 0.58);
   font-size: 11px;
   font-weight: 700;
@@ -806,18 +824,29 @@ p {
   text-transform: uppercase;
 }
 
-.writing-arrow {
-  position: absolute;
-  top: 24px;
-  right: 26px;
-  color: rgba(89, 241, 215, 0.62);
-  font-size: 22px;
-  transition: color 0.2s ease, transform 0.2s ease;
+.writing-card-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: 25px;
+  color: #dce7fb;
+  font-size: 13px;
+  font-weight: 800;
 }
 
-.writing-card:hover .writing-arrow {
+.writing-card-cta span {
+  color: var(--aqua);
+  transition: transform 0.2s ease;
+}
+
+.writing-card:hover .writing-card-cta span {
   color: var(--aqua);
   transform: translate(3px, -3px);
+}
+
+.writing-card:hover .writing-card-mark {
+  color: #d0c4ff;
+  transform: rotate(18deg) scale(1.12);
 }
 
 .view-writing-action {
@@ -996,18 +1025,8 @@ p {
     padding: 24px 22px;
   }
 
-  .writing-card {
-    gap: 14px;
-  }
-
   .writing-card h3 {
-    padding-right: 20px;
     font-size: 23px;
-  }
-
-  .writing-arrow {
-    top: 20px;
-    right: 20px;
   }
 }
 

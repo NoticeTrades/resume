@@ -5,7 +5,7 @@ import { schemaTypes } from "./schemaTypes/index.js";
 
 export default defineConfig({
   name: "default",
-  title: "Nicholas Thomas — Signals & Notes",
+  title: "Nicholas Thomas — Nick's Musings",
   projectId: "vzrug3c0",
   dataset: "production",
   plugins: [structureTool(), visionTool({ defaultApiVersion: "2026-08-23" })],

@@ -26,10 +26,15 @@ export const articleType = defineType({
       options: {
         list: [
           { title: "Markets", value: "Markets" },
+          { title: "Trade Ideas", value: "Trade Ideas" },
           { title: "Finance", value: "Finance" },
           { title: "Technology", value: "Technology" },
+          { title: "AI & Tools", value: "AI & Tools" },
           { title: "Life", value: "Life" },
+          { title: "Personal", value: "Personal" },
+          { title: "Observations", value: "Observations" },
           { title: "Philosophy", value: "Philosophy" },
+          { title: "Books", value: "Books" },
           { title: "Life & Technology", value: "Life & Technology" },
         ],
         layout: "dropdown",
@@ -131,6 +136,33 @@ export const articleType = defineType({
               name: "caption",
               title: "Caption",
               type: "string",
+            }),
+          ],
+        }),
+        defineArrayMember({
+          name: "video",
+          title: "Video",
+          type: "file",
+          options: {
+            accept: "video/mp4,video/webm,video/quicktime",
+          },
+          fields: [
+            defineField({
+              name: "title",
+              title: "Accessible title",
+              type: "string",
+              validation: (rule) => rule.required(),
+            }),
+            defineField({
+              name: "caption",
+              title: "Caption",
+              type: "string",
+            }),
+            defineField({
+              name: "poster",
+              title: "Poster image",
+              type: "image",
+              options: { hotspot: true },
             }),
           ],
         }),
