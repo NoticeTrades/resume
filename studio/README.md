@@ -19,3 +19,5 @@ npm run deploy
 ```
 
 Sanity will prompt for a unique `*.sanity.studio` hostname during the first deployment.
+
+Hosted Studio: `https://bynickthomas.sanity.studio/`
