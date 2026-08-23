@@ -1,4 +1,6 @@
 import "./style.css";
+import { articles } from "./content/articles.js";
+import { escapeHtml, loadPublishedArticles } from "./lib/sanity.js";
 
 const marketSymbols = [
   { symbol: "NQ", name: "Nasdaq" },
@@ -15,6 +17,36 @@ const demoQuotes = [
 ];
 
 const app = document.querySelector("#app");
+function selectFeaturedWriting(source) {
+  const manuallyFeatured = source.filter((article) => article.featured);
+  const remaining = source.filter((article) => !article.featured);
+  return [...manuallyFeatured, ...remaining].slice(0, 3);
+}
+
+function renderFeaturedWritingCards(source) {
+  return selectFeaturedWriting(source)
+  .map(
+    (article, index) => `
+      <a
+        class="writing-card reveal-on-scroll ${index === 0 ? "is-featured" : ""}"
+        href="/writing/?article=${encodeURIComponent(article.slug)}"
+        style="--reveal-delay: ${index * 90}ms"
+      >
+        <span class="writing-card-index">0${index + 1}</span>
+        <div class="writing-card-copy">
+          <span class="writing-category">${escapeHtml(article.category)}</span>
+          <h3>${escapeHtml(article.title)}</h3>
+          <p>${escapeHtml(article.excerpt)}</p>
+          <span class="writing-meta">${escapeHtml(article.displayDate)} · ${escapeHtml(article.readTime)}</span>
+        </div>
+        <span class="writing-arrow" aria-hidden="true">↗</span>
+      </a>
+    `
+  )
+  .join("");
+}
+
+const featuredWritingCards = renderFeaturedWritingCards(articles);
 
 app.innerHTML = `
   <header class="site-header">
@@ -23,6 +55,7 @@ app.innerHTML = `
       <nav aria-label="Main navigation">
         <a href="#home">Home</a>
         <a href="#about">About</a>
+        <a href="/writing/">Writing</a>
         <a href="mailto:nickthomasfx@gmail.com">Contact</a>
       </nav>
     </div>
@@ -100,6 +133,26 @@ app.innerHTML = `
         </div>
       </article>
     </section>
+
+    <section class="writing-section reveal-on-scroll" id="writing">
+      <div class="section-heading writing-heading">
+        <div>
+          <p class="section-kicker">ideas in progress</p>
+          <h2>featured writing</h2>
+        </div>
+        <span></span>
+      </div>
+      <p class="writing-intro reveal-on-scroll">
+        Market observations, lessons from building, and notes about the ideas that
+        shape how I see work and life.
+      </p>
+      <div class="writing-grid" id="featuredWritingGrid">
+        ${featuredWritingCards}
+      </div>
+      <a class="view-writing-action reveal-on-scroll" href="/writing/">
+        Explore all writing <span aria-hidden="true">→</span>
+      </a>
+    </section>
   </main>
 
   <footer class="site-footer">
@@ -108,7 +161,7 @@ app.innerHTML = `
 `;
 
 const tickerTrack = document.getElementById("tickerTrack");
-const marketDataEndpoint = import.meta.env.VITE_MARKET_DATA_ENDPOINT;
+const marketDataEndpoint = import.meta.env.VITE_MARKET_DATA_ENDPOINT || "/api/market-data";
 
 document.getElementById("reloadSite").addEventListener("click", () => {
   window.location.reload();
@@ -195,7 +248,7 @@ function initPortrait() {
   cancelAnimationFrame(animationId);
   introTimer = setTimeout(() => {
     introAssembling = false;
-  }, 4200);
+  }, 3600);
   animatePortrait();
 }
 
@@ -368,7 +421,7 @@ function animatePortrait() {
   }
 
   for (const pixel of pixels) {
-    const pull = introAssembling ? 0.009 : 0.07;
+    const pull = introAssembling ? 0.011 : 0.07;
     const friction = introAssembling ? 0.93 : 0.68;
     pixel.vx += (pixel.homeX - pixel.x) * pull;
     pixel.vy += (pixel.homeY - pixel.y) * pull;
@@ -442,7 +495,11 @@ if (image.complete) {
   image.addEventListener("load", initPortrait);
 }
 
-window.addEventListener("resize", initPortrait);
+let portraitResizeTimer;
+window.addEventListener("resize", () => {
+  clearTimeout(portraitResizeTimer);
+  portraitResizeTimer = setTimeout(initPortrait, 140);
+});
 
 const revealItems = document.querySelectorAll(".reveal-on-scroll");
 const revealObserver = new IntersectionObserver(
@@ -458,6 +515,17 @@ const revealObserver = new IntersectionObserver(
 );
 
 revealItems.forEach((item) => revealObserver.observe(item));
+
+loadPublishedArticles()
+  .then((publishedArticles) => {
+    if (!publishedArticles.length) return;
+    const writingGrid = document.getElementById("featuredWritingGrid");
+    writingGrid.innerHTML = renderFeaturedWritingCards(publishedArticles);
+    writingGrid.querySelectorAll(".reveal-on-scroll").forEach((item) => revealObserver.observe(item));
+  })
+  .catch(() => {
+    // Keep the local sample articles visible until Sanity is configured and published.
+  });
 
 const pokemonOptions = [
   { name: "Bulbasaur", src: "/pokemon/bulbasaur.webp", size: "sm" },
@@ -807,17 +875,12 @@ function formatPrice(value) {
 }
 
 async function fetchQuotes() {
-  if (!marketDataEndpoint) {
-    renderQuotes(demoQuotes, "demo feed");
-    return;
-  }
-
   try {
     const response = await fetch(marketDataEndpoint, { cache: "no-store" });
     if (!response.ok) throw new Error(`Quote endpoint returned ${response.status}`);
     const payload = await response.json();
     const quotes = normalizeQuotes(payload);
-    renderQuotes(quotes, "live");
+    renderQuotes(quotes, payload.status ?? "Yahoo delayed");
   } catch {
     renderQuotes(demoQuotes, "feed offline");
   }
@@ -838,4 +901,4 @@ function normalizeQuotes(payload) {
 }
 
 fetchQuotes();
-setInterval(fetchQuotes, 15000);
+setInterval(fetchQuotes, 8000);
