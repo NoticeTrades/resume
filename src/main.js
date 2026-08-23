@@ -23,7 +23,6 @@ app.innerHTML = `
       <nav aria-label="Main navigation">
         <a href="#home">Home</a>
         <a href="#about">About</a>
-        <a href="#books">Books</a>
         <a href="mailto:nickthomasfx@gmail.com">Contact</a>
       </nav>
     </div>
@@ -60,9 +59,9 @@ app.innerHTML = `
           <p class="eyebrow">finance / trading / technology</p>
           <h1 id="typedIntro" aria-label="Hello, Nick Here."></h1>
           <p>
-            I turn messy business assumptions into useful financial models, then spend
-            my off-hours pulling apart markets, trading ideas, and new AI tools to see
-            what actually holds up.
+            Eight hours turning messy business assumptions into useful financial models.
+            Eight hours testing markets, trading ideas, AI tools, and automations.
+            Eight hours recharging for the next iteration.
           </p>
           <a class="contact-action" href="mailto:nickthomasfx@gmail.com">Contact me</a>
         </div>
@@ -71,48 +70,41 @@ app.innerHTML = `
 
     <section class="about-section reveal-on-scroll" id="about">
       <div class="section-heading">
-        <h2>/ about me</h2>
+        <h2>about me</h2>
         <span></span>
       </div>
-      <div class="about-grid">
-        <article class="about-copy reveal-on-scroll">
-          <p>
-            During the day, I work with HVAC companies as a financial advisor, translating
-            operating assumptions into models, forecasts, and revenue projections that
-            make business decisions easier to understand.
-          </p>
-          <p>
-            Away from work, I am usually studying something: financial markets, trading,
-            finance, AI, machine learning, or new technology that can make analysis and
-            decision-making more useful.
-          </p>
-          <p>
-            I am also studying for the CMA, Certified Management Accountant, license and
-            continuing to develop my trading framework. My main markets are index futures,
-            especially NQ, ES, and YM.
-          </p>
-        </article>
-        <aside class="focus-panel reveal-on-scroll">
-          <h3>current focus</h3>
-          <ul>
-            <li>Financial forecasting</li>
-            <li>Revenue projection models</li>
-            <li>CMA exam preparation</li>
-            <li>AI and machine learning</li>
-            <li>NQ, ES, and YM futures</li>
-          </ul>
-        </aside>
-      </div>
-    </section>
-
-    <section class="books-section reveal-on-scroll" id="books">
-      <div class="section-heading">
-        <h2>/ book recommendations</h2>
-        <span></span>
-      </div>
-      <p>Coming soon. I’ll add the books, notes, and resources that have shaped how I think about markets, business, and decision-making.</p>
+      <article class="about-copy reveal-on-scroll">
+        <p>
+          I work in <strong>financial planning</strong> for HVAC businesses,
+          building models, forecasts, and revenue projections from the assumptions
+          that drive real operating decisions.
+        </p>
+        <p>
+          Outside of work, I stay close to markets and technology. I am continuing
+          to develop my trading framework around index futures, mainly
+          <strong>NQ, ES, and YM</strong>, while studying AI, machine learning, and
+          automation as tools for better analysis.
+        </p>
+        <p>
+          I am also studying for the <strong>CMA</strong>, Certified Management
+          Accountant, license to keep sharpening how I think about finance,
+          strategy, and business performance.
+        </p>
+        <div class="about-focus-list" aria-label="Current focus areas">
+          <span>Financial modeling</span>
+          <span>Forecasting</span>
+          <span>CMA prep</span>
+          <span>Index futures</span>
+          <span>AI workflows</span>
+          <span>Automation</span>
+        </div>
+      </article>
     </section>
   </main>
+
+  <footer class="site-footer">
+    <p>Built by Nick Thomas. All rights reserved.</p>
+  </footer>
 `;
 
 const tickerTrack = document.getElementById("tickerTrack");
@@ -669,7 +661,7 @@ function getWalkerBounds() {
 function getCollisionObstacles() {
   return Array.from(
     document.querySelectorAll(
-      ".wordmark, .site-header nav a, .market-strip, .social-icons a, .hero-copy, .contact-action, .about-copy, .focus-panel, .books-section > p, .section-heading"
+      ".wordmark, .site-header nav a, .market-strip, .social-icons a, .hero-copy, .contact-action, .about-copy, .section-heading"
     )
   )
     .map((target) => ({ target, rect: target.getBoundingClientRect() }))

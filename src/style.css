@@ -532,8 +532,7 @@ p {
   background: #77ffe8;
 }
 
-.about-section,
-.books-section {
+.about-section {
   padding: 0 clamp(22px, 11vw, 240px) 110px;
 }
 
@@ -557,21 +556,6 @@ p {
   background: var(--line);
 }
 
-.about-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1.3fr) minmax(280px, 0.7fr);
-  gap: 24px;
-}
-
-.about-copy,
-.focus-panel,
-.books-section > p {
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--panel);
-  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.16);
-}
-
 .reveal-on-scroll {
   opacity: 0;
   transform: translateY(34px);
@@ -584,56 +568,63 @@ p {
 }
 
 .about-copy {
-  padding: clamp(24px, 4vw, 42px);
+  max-width: 940px;
 }
 
 .about-copy p {
-  color: #b4bfd7;
-  font-size: clamp(17px, 1.5vw, 20px);
-  font-weight: 560;
-  line-height: 1.8;
+  color: #a6b2cd;
+  font-size: clamp(17px, 1.45vw, 20px);
+  font-weight: 400;
+  line-height: 1.85;
 }
 
-.about-copy p:last-child {
-  margin-bottom: 0;
-}
-
-.focus-panel {
-  align-self: start;
-  padding: 26px;
-}
-
-.focus-panel h3 {
-  margin-bottom: 18px;
-  color: var(--aqua);
-  font-size: 18px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
-.focus-panel ul {
-  display: grid;
-  gap: 14px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.focus-panel li {
-  padding: 12px 14px;
-  border: 1px solid rgba(148, 169, 209, 0.14);
-  border-radius: 6px;
-  background: rgba(255, 255, 255, 0.035);
-  color: #c3cce5;
+.about-copy strong {
+  color: #eef4ff;
   font-weight: 700;
 }
 
-.books-section > p {
-  max-width: 760px;
-  padding: 26px;
-  color: #b4bfd7;
-  font-size: 18px;
-  line-height: 1.7;
+.about-copy p:not(:last-child) {
+  margin-bottom: 24px;
+}
+
+.about-focus-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(180px, 1fr));
+  gap: 12px 34px;
+  max-width: 640px;
+  margin-top: 30px;
+}
+
+.about-focus-list span {
+  position: relative;
+  padding-left: 18px;
+  color: #aab6d0;
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.about-focus-list span::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.54em;
+  width: 7px;
+  height: 7px;
+  border-top: 1px solid var(--aqua);
+  border-right: 1px solid var(--aqua);
+  transform: rotate(45deg);
+}
+
+.site-footer {
+  padding: 34px clamp(22px, 11vw, 240px) 42px;
+  border-top: 1px solid var(--line);
+  color: rgba(195, 204, 229, 0.58);
+  font-size: 13px;
+  letter-spacing: 0.05em;
+}
+
+.site-footer p {
+  margin: 0;
 }
 
 @media (max-width: 900px) {
@@ -708,8 +699,9 @@ p {
     margin-top: 30px;
   }
 
-  .about-grid {
+  .about-focus-list {
     grid-template-columns: 1fr;
+    gap: 12px;
   }
 }
 
