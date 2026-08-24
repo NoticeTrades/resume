@@ -1,6 +1,10 @@
 import "./style.css";
 import { articles } from "./content/articles.js";
-import { escapeHtml, loadPublishedArticles } from "./lib/sanity.js";
+import {
+  escapeHtml,
+  loadLatestLearningNote,
+  loadPublishedArticles,
+} from "./lib/sanity.js";
 
 const marketSymbols = [
   { symbol: "NQ", name: "Nasdaq" },
@@ -58,6 +62,33 @@ function renderFeaturedWritingCards(source) {
   .join("");
 }
 
+function renderLatestLearningNote(note) {
+  if (!note) {
+    return `
+      <div class="til-home-empty">
+        <span aria-hidden="true">✦</span>
+        <p>New learning notes will appear here as I publish them.</p>
+      </div>
+    `;
+  }
+
+  return `
+    <a class="til-home-card" href="/notes/${encodeURIComponent(note.slug)}">
+      <div class="til-home-topline">
+        <span class="writing-category">${escapeHtml(note.category)}</span>
+        <span class="writing-meta">${escapeHtml(note.displayDate)}</span>
+      </div>
+      <h3>${escapeHtml(note.title)}</h3>
+      <p>${escapeHtml(note.excerpt)}</p>
+      <div class="til-home-footer">
+        <span>${escapeHtml(note.readTimeLabel)}</span>
+        ${note.relatedResource ? `<span>From ${escapeHtml(note.relatedResource.title)}</span>` : ""}
+        <strong>Read note ↗</strong>
+      </div>
+    </a>
+  `;
+}
+
 const featuredWritingCards = renderFeaturedWritingCards(articles);
 
 app.innerHTML = `
@@ -68,6 +99,8 @@ app.innerHTML = `
         <a href="#home">Home</a>
         <a href="#about">About</a>
         <a href="/writing/">Musings</a>
+        <a href="/library/">Library</a>
+        <a href="/notes/">TIL</a>
       </nav>
     </div>
     <div class="market-strip" aria-label="Futures market prices">
@@ -146,6 +179,22 @@ app.innerHTML = `
           <span style="--focus-delay: 720ms">Basketball</span>
         </div>
       </article>
+    </section>
+
+    <section class="til-home-section reveal-on-scroll" id="til">
+      <div class="section-heading til-home-heading">
+        <div>
+          <p class="section-kicker">a small idea worth keeping</p>
+          <h2>Today I Learned</h2>
+        </div>
+        <span></span>
+      </div>
+      <div id="latestLearningNote" class="reveal-on-scroll">
+        <div class="til-home-empty"><span aria-hidden="true">✦</span><p>Opening the notebook…</p></div>
+      </div>
+      <a class="view-writing-action reveal-on-scroll" href="/notes/">
+        View all notes <span aria-hidden="true">→</span>
+      </a>
     </section>
 
     <section class="writing-section reveal-on-scroll" id="writing">
@@ -561,6 +610,16 @@ loadPublishedArticles()
   })
   .catch(() => {
     // Keep the local sample articles visible until Sanity is configured and published.
+  });
+
+loadLatestLearningNote()
+  .then((note) => {
+    const latestNote = document.getElementById("latestLearningNote");
+    latestNote.innerHTML = renderLatestLearningNote(note);
+  })
+  .catch(() => {
+    const latestNote = document.getElementById("latestLearningNote");
+    latestNote.innerHTML = renderLatestLearningNote(null);
   });
 
 const pokemonOptions = [

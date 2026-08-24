@@ -4,6 +4,16 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "cleanUrls": true,
+  "rewrites": [
+    {
+      "source": "/library/:slug",
+      "destination": "/library/?slug=:slug"
+    },
+    {
+      "source": "/notes/:slug",
+      "destination": "/notes/?slug=:slug"
+    }
+  ],
   "headers": [
     {
       "source": "/(.*)",

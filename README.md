@@ -60,6 +60,13 @@ cd studio
 npm run deploy
 ```
 
+## Learning Library and Today I Learned
+
+Published `learningResource` documents appear at `/library`, with clean detail URLs at `/library/[slug]`.
+Published `learningNote` documents appear newest-first at `/notes`, with detail URLs at `/notes/[slug]`.
+
+A Learning Note can optionally reference a Learning Resource. Resource pages derive their related notes directly from that reference, so the relationship is never entered twice.
+
 ## Deployment
 
 The Vercel project should use:
@@ -77,5 +84,8 @@ After deployment, verify:
 
 - `/`
 - `/writing`
+- `/library`
+- `/notes`
 - `/api/market-data`
 - A published article selected from `/writing`
+- A published Library resource and Learning Note detail page

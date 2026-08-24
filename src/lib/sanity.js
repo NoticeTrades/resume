@@ -36,6 +36,50 @@ const articleQuery = `
   }
 `;
 
+const learningResourceFields = `
+  _id,
+  title,
+  "slug": slug.current,
+  resourceType,
+  authorCreator,
+  "coverImage": coverImage.asset->url,
+  "coverAlt": coverImage.alt,
+  category,
+  tags,
+  status,
+  progress,
+  rating,
+  startDate,
+  finishDate,
+  description,
+  personalSummary,
+  keyTakeaways,
+  externalUrl,
+  featured,
+  displayOrder
+`;
+
+const learningNoteFields = `
+  _id,
+  title,
+  "slug": slug.current,
+  publishedAt,
+  body,
+  category,
+  tags,
+  featured,
+  readTime,
+  "relatedResource": relatedResource->{
+    _id,
+    title,
+    "slug": slug.current,
+    resourceType,
+    authorCreator,
+    "coverImage": coverImage.asset->url,
+    "coverAlt": coverImage.alt
+  }
+`;
+
 export function escapeHtml(value = "") {
   return String(value)
     .replaceAll("&", "&amp;")
@@ -45,7 +89,7 @@ export function escapeHtml(value = "") {
     .replaceAll("'", "&#039;");
 }
 
-function estimateReadTime(body = []) {
+export function estimateReadTime(body = []) {
   const wordCount = body
     .filter((block) => block?._type === "block")
     .flatMap((block) => block.children ?? [])
@@ -58,15 +102,41 @@ function estimateReadTime(body = []) {
   return Math.max(1, Math.ceil(wordCount / 220));
 }
 
-function formatPublishedDate(value) {
+export function formatPublishedDate(value, fallback = "Published") {
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "Published article";
+  if (Number.isNaN(date.getTime())) return fallback;
 
   return new Intl.DateTimeFormat("en-US", {
     month: "short",
     day: "numeric",
     year: "numeric",
   }).format(date);
+}
+
+export function portableTextToPlainText(body = []) {
+  return body
+    .filter((block) => block?._type === "block")
+    .flatMap((block) => block.children ?? [])
+    .map((child) => child.text ?? "")
+    .join(" ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+export function createExcerpt(body = [], maxLength = 180) {
+  const text = portableTextToPlainText(body);
+  if (text.length <= maxLength) return text;
+  const shortened = text.slice(0, maxLength + 1).replace(/\s+\S*$/, "");
+  return `${shortened || text.slice(0, maxLength)}…`;
+}
+
+export function buildSanityImageUrl(url, width = 720) {
+  if (!url) return "";
+  const imageUrl = new URL(url);
+  imageUrl.searchParams.set("auto", "format");
+  imageUrl.searchParams.set("fit", "max");
+  imageUrl.searchParams.set("w", String(width));
+  return imageUrl.toString();
 }
 
 export function renderPortableText(body = []) {
@@ -106,24 +176,7 @@ export function renderPortableText(body = []) {
 }
 
 export async function loadPublishedArticles() {
-  const endpoint = new URL(
-    `https://${projectId}.api.sanity.io/v2026-08-23/data/query/${dataset}`
-  );
-  endpoint.searchParams.set("query", articleQuery);
-  endpoint.searchParams.set("perspective", "published");
-
-  const response = await fetch(endpoint, {
-    headers: { Accept: "application/json" },
-    cache: "no-store",
-    signal: AbortSignal.timeout(4000),
-  });
-
-  if (!response.ok) {
-    throw new Error(`Sanity returned ${response.status}`);
-  }
-
-  const payload = await response.json();
-  const documents = payload.result ?? [];
+  const documents = (await fetchSanity(articleQuery)) ?? [];
 
   return documents.map((article) => {
     const minutes = Number(article.readTime) || estimateReadTime(article.body);
@@ -134,4 +187,117 @@ export async function loadPublishedArticles() {
       bodyHtml: renderPortableText(article.body),
     };
   });
+}
+
+async function fetchSanity(query, params = {}) {
+  const endpoint = new URL(
+    `https://${projectId}.api.sanity.io/v2026-08-23/data/query/${dataset}`
+  );
+  endpoint.searchParams.set("query", query);
+  endpoint.searchParams.set("perspective", "published");
+
+  Object.entries(params).forEach(([name, value]) => {
+    endpoint.searchParams.set(`$${name}`, JSON.stringify(value));
+  });
+
+  const response = await fetch(endpoint, {
+    headers: { Accept: "application/json" },
+    cache: "no-store",
+    signal: AbortSignal.timeout(5000),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Sanity returned ${response.status}`);
+  }
+
+  const payload = await response.json();
+  return payload.result;
+}
+
+function normalizeLearningNote(note) {
+  const minutes = Number(note.readTime) || estimateReadTime(note.body);
+  return {
+    ...note,
+    displayDate: formatPublishedDate(note.publishedAt),
+    readTimeLabel: `${minutes} min read`,
+    excerpt: createExcerpt(note.body),
+    bodyHtml: renderPortableText(note.body),
+  };
+}
+
+export async function loadLearningResources() {
+  const query = `
+    *[
+      _type == "learningResource" &&
+      defined(slug.current)
+    ] | order(coalesce(displayOrder, 9999) asc, title asc) {
+      ${learningResourceFields}
+    }
+  `;
+  return (await fetchSanity(query)) ?? [];
+}
+
+export async function loadLearningResource(slug) {
+  const query = `
+    {
+      "resource": *[
+        _type == "learningResource" &&
+        slug.current == $slug
+      ][0] {
+        ${learningResourceFields}
+      },
+      "notes": *[
+        _type == "learningNote" &&
+        defined(slug.current) &&
+        relatedResource->slug.current == $slug
+      ] | order(publishedAt desc) {
+        ${learningNoteFields}
+      }
+    }
+  `;
+  const result = await fetchSanity(query, { slug });
+  return {
+    resource: result?.resource ?? null,
+    notes: (result?.notes ?? []).map(normalizeLearningNote),
+  };
+}
+
+export async function loadLearningNotes() {
+  const query = `
+    *[
+      _type == "learningNote" &&
+      defined(slug.current) &&
+      defined(publishedAt)
+    ] | order(publishedAt desc) {
+      ${learningNoteFields}
+    }
+  `;
+  return ((await fetchSanity(query)) ?? []).map(normalizeLearningNote);
+}
+
+export async function loadLearningNote(slug) {
+  const query = `
+    *[
+      _type == "learningNote" &&
+      slug.current == $slug
+    ][0] {
+      ${learningNoteFields}
+    }
+  `;
+  const note = await fetchSanity(query, { slug });
+  return note ? normalizeLearningNote(note) : null;
+}
+
+export async function loadLatestLearningNote() {
+  const query = `
+    *[
+      _type == "learningNote" &&
+      defined(slug.current) &&
+      defined(publishedAt)
+    ] | order(publishedAt desc) [0] {
+      ${learningNoteFields}
+    }
+  `;
+  const note = await fetchSanity(query);
+  return note ? normalizeLearningNote(note) : null;
 }

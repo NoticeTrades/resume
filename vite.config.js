@@ -33,13 +33,45 @@ function yahooFinanceDevProxy() {
   };
 }
 
+function rewriteLearningRoute(request) {
+  const requestUrl = new URL(request.url, "http://localhost");
+  const match = requestUrl.pathname.match(/^\/(library|notes)\/([^/]+)\/?$/);
+  if (!match) return;
+
+  const [, section, slug] = match;
+  requestUrl.pathname = `/${section}/`;
+  try {
+    requestUrl.searchParams.set("slug", decodeURIComponent(slug));
+  } catch {
+    requestUrl.searchParams.set("slug", slug);
+  }
+  request.url = `${requestUrl.pathname}${requestUrl.search}`;
+}
+
+function learningRouteFallbacks() {
+  const configure = (server) => {
+    server.middlewares.use((request, _response, next) => {
+      rewriteLearningRoute(request);
+      next();
+    });
+  };
+
+  return {
+    name: "learning-route-fallbacks",
+    configureServer: configure,
+    configurePreviewServer: configure,
+  };
+}
+
 export default defineConfig({
-  plugins: [yahooFinanceDevProxy()],
+  plugins: [learningRouteFallbacks(), yahooFinanceDevProxy()],
   build: {
     rollupOptions: {
       input: {
         main: "index.html",
         writing: "writing/index.html",
+        library: "library/index.html",
+        notes: "notes/index.html",
       },
     },
   },

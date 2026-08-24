@@ -687,6 +687,96 @@ p {
   padding: 20px clamp(22px, 11vw, 240px) 120px;
 }
 
+.til-home-section {
+  position: relative;
+  padding: 16px clamp(22px, 11vw, 240px) 112px;
+}
+
+.til-home-heading {
+  margin-bottom: 28px;
+}
+
+.til-home-heading > div {
+  flex: 0 0 auto;
+}
+
+.til-home-card,
+.til-home-empty {
+  max-width: 900px;
+  display: block;
+  padding: clamp(24px, 3vw, 34px);
+  border: 1px solid rgba(148, 169, 209, 0.16);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(139, 115, 255, 0.12), transparent 42%),
+    linear-gradient(145deg, rgba(89, 241, 215, 0.045), transparent 50%),
+    var(--panel);
+}
+
+.til-home-card {
+  transition: border-color 0.22s ease, transform 0.22s ease, box-shadow 0.22s ease;
+}
+
+.til-home-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(89, 241, 215, 0.4);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.18);
+}
+
+.til-home-topline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 18px;
+}
+
+.til-home-card h3 {
+  max-width: 720px;
+  margin: 0 0 12px;
+  color: #edf4ff;
+  font-size: clamp(23px, 2.4vw, 34px);
+  line-height: 1.22;
+}
+
+.til-home-card > p {
+  max-width: 760px;
+  margin: 0;
+  color: #99a7c4;
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.til-home-footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 20px;
+  margin-top: 22px;
+  color: #7887a3;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.til-home-footer strong {
+  color: var(--aqua);
+}
+
+.til-home-empty {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  color: #8f9db8;
+}
+
+.til-home-empty span {
+  color: rgba(170, 151, 255, 0.82);
+  font-size: 20px;
+}
+
+.til-home-empty p {
+  margin: 0;
+}
+
 .writing-section::before {
   content: "";
   position: absolute;
@@ -1036,6 +1126,10 @@ p {
     padding: 16px clamp(22px, 9vw, 200px) 100px;
   }
 
+  .til-home-section {
+    padding: 16px clamp(22px, 9vw, 200px) 92px;
+  }
+
   .writing-intro {
     max-width: 640px;
     font-size: clamp(15px, 1.15vw, 17.5px);
@@ -1195,6 +1289,10 @@ p {
 
   .writing-section {
     padding-bottom: 82px;
+  }
+
+  .til-home-section {
+    padding-bottom: 78px;
   }
 
   .writing-card,
