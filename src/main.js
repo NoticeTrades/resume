@@ -136,12 +136,11 @@ app.innerHTML = `
           strategy, and business performance.
         </p>
         <div class="about-focus-list" aria-label="Current focus areas">
-          <span>Financial modeling</span>
-          <span>Forecasting</span>
-          <span>CMA prep</span>
-          <span>Index futures</span>
-          <span>AI workflows</span>
-          <span>Automation</span>
+          <span style="--focus-delay: 120ms">Financial modeling</span>
+          <span style="--focus-delay: 240ms">CMA prep</span>
+          <span style="--focus-delay: 360ms">Student <small>(always learning)</small></span>
+          <span style="--focus-delay: 480ms">AI technology + workflows</span>
+          <span style="--focus-delay: 600ms">Trading</span>
         </div>
       </article>
     </section>

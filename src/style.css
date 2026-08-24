@@ -641,22 +641,47 @@ p {
 
 .about-focus-list span {
   position: relative;
-  padding-left: 18px;
+  padding-left: 24px;
   color: #aab6d0;
   font-size: 15px;
   font-weight: 500;
+  opacity: 0;
+  transform: translateY(14px);
+  transition:
+    opacity 0.48s ease,
+    color 0.2s ease,
+    transform 0.58s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .about-focus-list span::before {
-  content: "";
+  content: "↗";
   position: absolute;
   left: 0;
-  top: 0.54em;
-  width: 7px;
-  height: 7px;
-  border-top: 1px solid var(--aqua);
-  border-right: 1px solid var(--aqua);
-  transform: rotate(45deg);
+  top: -0.05em;
+  color: var(--aqua);
+  font-size: 16px;
+  opacity: 0;
+  transform: translate(-7px, 7px);
+  transition:
+    opacity 0.35s ease,
+    transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.about-focus-list small {
+  color: #7f8da8;
+  font: inherit;
+}
+
+.about-copy.is-visible .about-focus-list span {
+  opacity: 1;
+  transform: translateY(0);
+  transition-delay: var(--focus-delay);
+}
+
+.about-copy.is-visible .about-focus-list span::before {
+  opacity: 1;
+  transform: translate(0, 0);
+  transition-delay: calc(var(--focus-delay) + 70ms);
 }
 
 .writing-section {
