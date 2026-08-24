@@ -141,6 +141,7 @@ app.innerHTML = `
           <span style="--focus-delay: 360ms">Student <small>(always learning)</small></span>
           <span style="--focus-delay: 480ms">AI technology + workflows</span>
           <span style="--focus-delay: 600ms">Trading</span>
+          <span style="--focus-delay: 720ms">Basketball</span>
         </div>
       </article>
     </section>
@@ -526,6 +527,24 @@ const revealObserver = new IntersectionObserver(
 );
 
 revealItems.forEach((item) => revealObserver.observe(item));
+
+const focusList = document.querySelector(".about-focus-list");
+const focusObserver = new IntersectionObserver(
+  (entries) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add("is-visible");
+        focusObserver.unobserve(entry.target);
+      }
+    });
+  },
+  {
+    threshold: 0.35,
+    rootMargin: "0px 0px -8% 0px",
+  }
+);
+
+focusObserver.observe(focusList);
 
 loadPublishedArticles()
   .then((publishedArticles) => {

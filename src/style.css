@@ -672,13 +672,13 @@ p {
   font: inherit;
 }
 
-.about-copy.is-visible .about-focus-list span {
+.about-focus-list.is-visible span {
   opacity: 1;
   transform: translateY(0);
   transition-delay: var(--focus-delay);
 }
 
-.about-copy.is-visible .about-focus-list span::before {
+.about-focus-list.is-visible span::before {
   opacity: 1;
   transform: translate(0, 0);
   transition-delay: calc(var(--focus-delay) + 70ms);
