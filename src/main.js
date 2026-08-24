@@ -68,7 +68,6 @@ app.innerHTML = `
         <a href="#home">Home</a>
         <a href="#about">About</a>
         <a href="/writing/">Musings</a>
-        <a href="mailto:nickthomasfx@gmail.com">Contact</a>
       </nav>
     </div>
     <div class="market-strip" aria-label="Futures market prices">
@@ -84,6 +83,9 @@ app.innerHTML = `
       <a href="https://x.com/noticetrades" target="_blank" rel="noreferrer" aria-label="X">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.42 10.27 22.13 1.3h-1.83l-6.7 7.8-5.35-7.8H2.08l8.08 11.77-8.08 9.4h1.83l7.06-8.22 5.64 8.22h6.17l-8.36-12.2Zm-2.5 2.9-.82-1.17L4.6 2.68h2.77l5.26 7.53.82 1.17 6.84 9.8h-2.77l-5.6-8.01Z"/></svg>
       </a>
+      <a href="mailto:nickthomasfx@gmail.com" aria-label="Email Nicholas Thomas">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.75 5.25h16.5A2.75 2.75 0 0 1 23 8v8a2.75 2.75 0 0 1-2.75 2.75H3.75A2.75 2.75 0 0 1 1 16V8a2.75 2.75 0 0 1 2.75-2.75Zm0 1.75a1 1 0 0 0-.72.3L12 13.66l8.97-6.36a1 1 0 0 0-.72-.3H3.75Zm17.5 2.12-8.74 6.2a.88.88 0 0 1-1.02 0l-8.74-6.2V16c0 .55.45 1 1 1h16.5c.55 0 1-.45 1-1V9.12Z"/></svg>
+      </a>
       <button class="pokeball-release" id="pokeballRelease" type="button" aria-label="Release a random Pokemon">
         <img src="/pokemon/pokeball.png" alt="" />
       </button>
@@ -94,7 +96,7 @@ app.innerHTML = `
     <section class="hero" id="home">
       <canvas id="pixelPortrait" class="pixel-stage"></canvas>
       <div class="pokemon-walker" id="pokemonWalker" aria-hidden="true">
-        <img id="pokemonSprite" src="/pokemon/bulbasaur.webp" alt="" />
+        <img id="pokemonSprite" alt="" />
       </div>
       <div class="hero-inner">
         <button class="portrait-shell" type="button" aria-label="Scatter pixel portrait">
@@ -426,6 +428,11 @@ function disturbPortrait(originX, originY, radius = 145, strength = 8.5) {
 }
 
 function animatePortrait() {
+  if (document.hidden) {
+    animationId = 0;
+    return;
+  }
+
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   if (pointer.active) {
@@ -630,7 +637,10 @@ function launchWalker() {
 }
 
 function animateWalker(time) {
-  if (!walker.released) return;
+  if (!walker.released || document.hidden) {
+    walker.frameId = 0;
+    return;
+  }
 
   const dt = Math.min(2.2, Math.max(0.75, (time - (walker.lastTime || time)) / 16.67));
   walker.lastTime = time;
@@ -852,6 +862,27 @@ function endPokemonDrag(event) {
   normalizeWalkerSpeed(3.1);
 }
 
+function handleAnimationVisibility() {
+  if (document.hidden) {
+    cancelAnimationFrame(animationId);
+    cancelAnimationFrame(walker.frameId);
+    animationId = 0;
+    walker.frameId = 0;
+    return;
+  }
+
+  if (pixels.length && !animationId) {
+    animationId = requestAnimationFrame(animatePortrait);
+  }
+
+  if (walker.released && !walker.frameId) {
+    walker.lastTime = 0;
+    walker.frameId = requestAnimationFrame(animateWalker);
+  }
+}
+
+document.addEventListener("visibilitychange", handleAnimationVisibility);
+
 const typedIntro = document.getElementById("typedIntro");
 const introText = "Hello, Nick Here.";
 let typedIndex = 0;
@@ -930,4 +961,10 @@ function normalizeQuotes(payload) {
 }
 
 fetchQuotes();
-setInterval(fetchQuotes, 8000);
+setInterval(() => {
+  if (!document.hidden) fetchQuotes();
+}, 8000);
+
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden) fetchQuotes();
+});
