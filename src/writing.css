@@ -121,6 +121,10 @@
   text-align: center;
 }
 
+.writing-library-empty {
+  margin-top: 28px;
+}
+
 .article-page {
   padding-top: clamp(70px, 9vw, 130px);
 }

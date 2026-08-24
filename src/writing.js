@@ -72,21 +72,33 @@ function renderLibrary() {
           <h2 id="writingLibraryTitle">Latest musings</h2>
           <p>A growing collection of ideas, observations, experiments, and things learned along the way.</p>
         </div>
-        <div class="writing-filters reveal-on-scroll" aria-label="Filter writing by category">
-          ${categories
-            .map(
-              (category, index) => `
-                <button type="button" data-filter="${category}" class="${index === 0 ? "is-active" : ""}">
-                  ${escapeHtml(category)}
-                </button>
-              `
-            )
-            .join("")}
-        </div>
+        ${
+          writingArticles.length
+            ? `<div class="writing-filters reveal-on-scroll" aria-label="Filter writing by category">
+                ${categories
+                  .map(
+                    (category, index) => `
+                      <button type="button" data-filter="${category}" class="${index === 0 ? "is-active" : ""}">
+                        ${escapeHtml(category)}
+                      </button>
+                    `
+                  )
+                  .join("")}
+              </div>`
+            : ""
+        }
         <div class="writing-library-grid">
-          ${writingArticles.map(renderArticleCard).join("")}
+          ${
+            writingArticles.length
+              ? writingArticles.map(renderArticleCard).join("")
+              : `<div class="writing-empty-state writing-library-empty reveal-on-scroll">
+                  <span aria-hidden="true">✦</span>
+                  <h3>The next musing starts here.</h3>
+                  <p>There are no published articles right now. New writing will appear here as soon as it is published.</p>
+                </div>`
+          }
         </div>
-        <p class="writing-empty" hidden>No writing is available in this category yet.</p>
+        ${writingArticles.length ? '<p class="writing-empty" hidden>No musings are available in this category yet.</p>' : ""}
       </section>
     </main>
   `;
@@ -100,7 +112,7 @@ function renderArticle(article) {
   return `
     <main class="writing-page article-page">
       <article class="article-detail reveal-on-scroll">
-        <a class="article-back" href="/writing/">← All writing</a>
+        <a class="article-back" href="/writing/">← All musings</a>
         <header class="article-header">
           <span class="writing-category">${escapeHtml(article.category)}</span>
           <h1>${escapeHtml(article.title)}</h1>
@@ -178,10 +190,8 @@ async function initializeWriting() {
 
   try {
     const publishedArticles = await loadPublishedArticles();
-    if (publishedArticles.length) {
-      writingArticles = publishedArticles;
-      renderWritingPage();
-    }
+    writingArticles = publishedArticles;
+    renderWritingPage();
   } catch {
     // The sample library remains available while Sanity is empty or unreachable.
   }

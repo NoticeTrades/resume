@@ -24,6 +24,16 @@ function selectFeaturedWriting(source) {
 }
 
 function renderFeaturedWritingCards(source) {
+  if (!source.length) {
+    return `
+      <div class="writing-empty-state reveal-on-scroll">
+        <span aria-hidden="true">✦</span>
+        <h3>New musings are taking shape.</h3>
+        <p>Fresh thoughts, observations, and ideas will appear here soon.</p>
+      </div>
+    `;
+  }
+
   return selectFeaturedWriting(source)
   .map(
     (article, index) => `
@@ -520,7 +530,6 @@ revealItems.forEach((item) => revealObserver.observe(item));
 
 loadPublishedArticles()
   .then((publishedArticles) => {
-    if (!publishedArticles.length) return;
     const writingGrid = document.getElementById("featuredWritingGrid");
     writingGrid.innerHTML = renderFeaturedWritingCards(publishedArticles);
     writingGrid.querySelectorAll(".reveal-on-scroll").forEach((item) => revealObserver.observe(item));

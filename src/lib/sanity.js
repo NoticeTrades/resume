@@ -107,13 +107,14 @@ export function renderPortableText(body = []) {
 
 export async function loadPublishedArticles() {
   const endpoint = new URL(
-    `https://${projectId}.apicdn.sanity.io/v2026-08-23/data/query/${dataset}`
+    `https://${projectId}.api.sanity.io/v2026-08-23/data/query/${dataset}`
   );
   endpoint.searchParams.set("query", articleQuery);
   endpoint.searchParams.set("perspective", "published");
 
   const response = await fetch(endpoint, {
     headers: { Accept: "application/json" },
+    cache: "no-store",
     signal: AbortSignal.timeout(4000),
   });
 
