@@ -1,5 +1,6 @@
 import "./style.css";
 import { articles } from "./content/articles.js";
+import { createPuzzlePortrait } from "./lib/puzzlePortrait.js";
 import {
   escapeHtml,
   loadLatestLearningNote,
@@ -132,7 +133,11 @@ app.innerHTML = `
         <img id="pokemonSprite" alt="" />
       </div>
       <div class="hero-inner">
-        <button class="portrait-shell" type="button" aria-label="Scatter pixel portrait">
+        <button
+          class="portrait-shell"
+          type="button"
+          aria-label="Scatter the puzzle portrait and let it rebuild itself"
+        >
           <img src="/nick-pixel-source.jpg" alt="" id="portraitSource" />
         </button>
         <div class="hero-copy">
@@ -235,338 +240,11 @@ const pokeballRelease = document.getElementById("pokeballRelease");
 const pokemonWalker = document.getElementById("pokemonWalker");
 const pokemonSprite = document.getElementById("pokemonSprite");
 const portraitShell = document.querySelector(".portrait-shell");
-const canvas = document.getElementById("pixelPortrait");
-const image = document.getElementById("portraitSource");
-const ctx = canvas.getContext("2d", { willReadFrequently: true });
-const pointer = { x: 0, y: 0, active: false };
-let introAssembling = true;
-let pixels = [];
-let animationId;
-let introTimer;
-
-function initPortrait() {
-  introAssembling = true;
-  clearTimeout(introTimer);
-  const heroRect = hero.getBoundingClientRect();
-  const portraitRect = portraitShell.getBoundingClientRect();
-  const canvasWidth = Math.max(1, Math.round(heroRect.width));
-  const canvasHeight = Math.max(1, Math.round(heroRect.height));
-  const portraitWidth = Math.max(1, Math.round(portraitRect.width));
-  const portraitHeight = Math.max(1, Math.round(portraitRect.height));
-  const sample = 8;
-
-  canvas.width = canvasWidth;
-  canvas.height = canvasHeight;
-
-  const temp = document.createElement("canvas");
-  const tempCtx = temp.getContext("2d", { willReadFrequently: true });
-  temp.width = portraitWidth;
-  temp.height = portraitHeight;
-
-  const scale = Math.max(portraitWidth / image.naturalWidth, portraitHeight / image.naturalHeight) * 1.06;
-  const imageWidth = image.naturalWidth * scale;
-  const imageHeight = image.naturalHeight * scale;
-  const left = (portraitWidth - imageWidth) / 2 + portraitWidth * 0.02;
-  const top = (portraitHeight - imageHeight) / 2 - portraitHeight * 0.03;
-
-  tempCtx.drawImage(image, left, top, imageWidth, imageHeight);
-  const data = tempCtx.getImageData(0, 0, portraitWidth, portraitHeight).data;
-  const offsetX = portraitRect.left - heroRect.left;
-  const offsetY = portraitRect.top - heroRect.top;
-  pixels = [];
-
-  for (let y = 0; y < portraitHeight; y += sample) {
-    for (let x = 0; x < portraitWidth; x += sample) {
-      const colorSample = sampleAverageColor(data, portraitWidth, portraitHeight, x, y, sample);
-      const { red, green, blue, alpha, brightness } = colorSample;
-      const mask = portraitMask(x / portraitWidth, y / portraitHeight);
-
-      if (alpha > 10 && brightness > 20 && mask > 0.11) {
-        const detail = Math.max(0.4, brightness / 255);
-        const themedRed = Math.round(red * 0.62 + 10);
-        const themedGreen = Math.round(green * 0.82 + 34);
-        const themedBlue = Math.round(blue * 0.86 + 38);
-        const homeX = offsetX + x;
-        const homeY = offsetY + y;
-        const introAngle = Math.random() * Math.PI * 2;
-        const introDistance = 150 + Math.random() * Math.max(canvasWidth, canvasHeight) * 0.48;
-        pixels.push({
-          x: homeX + Math.cos(introAngle) * introDistance,
-          y: homeY + Math.sin(introAngle) * introDistance,
-          homeX,
-          homeY,
-          vx: (Math.random() - 0.5) * 3,
-          vy: (Math.random() - 0.5) * 3,
-          angle: Math.random() * Math.PI * 2,
-          homeAngle: ((x / sample + y / sample) % 7) * 0.025 - 0.075,
-          spin: (Math.random() - 0.5) * 0.24,
-          shape: Math.round(x / sample + y / sample) % 4,
-          size: (sample * 1.08 + detail * 0.75) * Math.min(1, Math.max(0.72, mask * 1.2)),
-          color: `rgba(${Math.min(255, themedRed)}, ${Math.min(255, themedGreen)}, ${Math.min(255, themedBlue)}, ${Math.min(0.95, (0.7 + detail * 0.2) * Math.max(0.68, mask))})`,
-        });
-      }
-    }
-  }
-
-  cancelAnimationFrame(animationId);
-  introTimer = setTimeout(() => {
-    introAssembling = false;
-  }, 3600);
-  animatePortrait();
-}
-
-function portraitMask(nx, ny) {
-  const center = 0.47 + Math.sin((ny - 0.16) * Math.PI) * 0.05;
-  const upperWidth = 0.12 + smoothstep(0.04, 0.22, ny) * 0.24;
-  const middleWidth = 0.34 + smoothstep(0.24, 0.48, ny) * 0.17;
-  const lowerTaper = 1 - smoothstep(0.78, 1, ny) * 0.42;
-  const halfWidth = Math.min(0.45, Math.max(upperWidth, middleWidth * lowerTaper));
-  const mainShape = smoothstep(halfWidth + 0.035, halfWidth - 0.035, Math.abs(nx - center));
-  const verticalFade = smoothstep(0.04, 0.13, ny) * (1 - smoothstep(0.96, 1.02, ny));
-  const head = softEllipse(nx, ny, 0.56, 0.2, 0.2, 0.16, 0.22);
-  const faceNeck = softEllipse(nx, ny, 0.56, 0.38, 0.17, 0.2, 0.12);
-  const shirt = softEllipse(nx, ny, 0.58, 0.58, 0.34, 0.38, 0.16);
-  const newspaper = softPolygon(nx, ny, [
-    [0.02, 0.02],
-    [0.17, 0.23],
-    [0.43, 0.3],
-    [0.49, 0.53],
-    [0.43, 0.9],
-    [0.12, 0.95],
-    [0.02, 0.72],
-  ]);
-  const rightArm = softPolygon(nx, ny, [
-    [0.47, 0.43],
-    [0.82, 0.36],
-    [0.94, 0.66],
-    [0.86, 0.92],
-    [0.54, 0.91],
-    [0.43, 0.66],
-  ]);
-  const hand = softEllipse(nx, ny, 0.47, 0.82, 0.18, 0.1, 0.12);
-
-  let mask = Math.max(mainShape * verticalFade, head, faceNeck, shirt, newspaper * 0.92, rightArm * 0.78, hand);
-  const topLeftTrim = softEllipse(nx, ny, -0.08, 0, 0.36, 0.26, 0.2);
-  const lowerLeftTrim = softEllipse(nx, ny, -0.12, 1.02, 0.34, 0.22, 0.16);
-  const lowerRightTrim = softEllipse(nx, ny, 1.06, 0.98, 0.34, 0.22, 0.16);
-  const newspaperCornerTrim = softEllipse(nx, ny, 0.05, 0.08, 0.22, 0.16, 0.1);
-  const topLeftBlockTrim = softPolygon(nx, ny, [
-    [0, 0],
-    [0.24, 0],
-    [0.2, 0.2],
-    [0.06, 0.27],
-    [0, 0.2],
-  ]);
-  const bottomRightGridTrim = softEllipse(nx, ny, 0.98, 0.96, 0.2, 0.16, 0.1);
-  const rightEdgeTaper = smoothstep(0.98, 0.84, nx + Math.max(0, ny - 0.62) * 0.24);
-  mask *= rightEdgeTaper;
-  mask *= 1 - Math.max(
-    topLeftTrim * 0.62,
-    lowerLeftTrim * 0.54,
-    lowerRightTrim * 0.42,
-    newspaperCornerTrim * 0.82,
-    topLeftBlockTrim * 0.7,
-    bottomRightGridTrim * 0.42
-  );
-  return Math.max(0, Math.min(1, mask));
-}
-
-function sampleAverageColor(data, width, height, startX, startY, size) {
-  let red = 0;
-  let green = 0;
-  let blue = 0;
-  let alpha = 0;
-  let count = 0;
-  const endY = Math.min(height, startY + size);
-  const endX = Math.min(width, startX + size);
-  for (let y = startY; y < endY; y += 2) {
-    for (let x = startX; x < endX; x += 2) {
-      const index = (y * width + x) * 4;
-      red += data[index];
-      green += data[index + 1];
-      blue += data[index + 2];
-      alpha += data[index + 3];
-      count += 1;
-    }
-  }
-  red /= count;
-  green /= count;
-  blue /= count;
-  alpha /= count;
-  return {
-    red,
-    green,
-    blue,
-    alpha,
-    brightness: (red + green + blue) / 3,
-  };
-}
-
-function softEllipse(x, y, cx, cy, rx, ry, feather) {
-  const distance = Math.sqrt(((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2);
-  return smoothstep(1 + feather, 1 - feather, distance);
-}
-
-function softPolygon(x, y, points) {
-  if (!inPolygon(x, y, points)) return 0;
-  const distance = points.reduce((closest, point, index) => {
-    const next = points[(index + 1) % points.length];
-    return Math.min(closest, distanceToSegment(x, y, point[0], point[1], next[0], next[1]));
-  }, Infinity);
-  return smoothstep(0, 0.055, distance);
-}
-
-function inPolygon(x, y, points) {
-  let inside = false;
-  for (let i = 0, j = points.length - 1; i < points.length; j = i++) {
-    const xi = points[i][0];
-    const yi = points[i][1];
-    const xj = points[j][0];
-    const yj = points[j][1];
-    const intersects = yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi;
-    if (intersects) inside = !inside;
-  }
-  return inside;
-}
-
-function distanceToSegment(px, py, ax, ay, bx, by) {
-  const dx = bx - ax;
-  const dy = by - ay;
-  const length = dx * dx + dy * dy;
-  const t = length === 0 ? 0 : Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / length));
-  return Math.hypot(px - (ax + t * dx), py - (ay + t * dy));
-}
-
-function smoothstep(edge0, edge1, x) {
-  const t = Math.max(0, Math.min(1, (x - edge0) / (edge1 - edge0)));
-  return t * t * (3 - 2 * t);
-}
-
-function scatterPortrait(event) {
-  const heroRect = hero.getBoundingClientRect();
-  const clickX = event.clientX - heroRect.left;
-  const clickY = event.clientY - heroRect.top;
-
-  for (const pixel of pixels) {
-    const dx = pixel.homeX - clickX;
-    const dy = pixel.homeY - clickY;
-    const angle = Math.atan2(dy, dx) + (Math.random() - 0.5) * 1.25;
-    const distance = Math.max(24, Math.hypot(dx, dy));
-    const burst = 16 + Math.random() * 18 + Math.max(0, 260 - distance) * 0.07;
-    pixel.vx += Math.cos(angle) * burst + (Math.random() - 0.5) * 8;
-    pixel.vy += Math.sin(angle) * burst + (Math.random() - 0.5) * 8;
-    pixel.spin += (Math.random() - 0.5) * 0.32;
-  }
-}
-
-function disturbPortrait(originX, originY, radius = 145, strength = 8.5) {
-  for (const pixel of pixels) {
-    const dx = pixel.x - originX;
-    const dy = pixel.y - originY;
-    const distance = Math.hypot(dx, dy);
-    if (distance < radius) {
-      const falloff = 1 - distance / radius;
-      const centerSoftener = distance < 38 ? distance / 38 : 1;
-      const force = falloff * centerSoftener * strength;
-      const angle = Math.atan2(dy, dx) + Math.sin(distance * 0.05) * 0.32;
-      pixel.vx += Math.cos(angle) * force;
-      pixel.vy += Math.sin(angle) * force;
-      pixel.spin += falloff * 0.08;
-    }
-  }
-}
-
-function animatePortrait() {
-  if (document.hidden) {
-    animationId = 0;
-    return;
-  }
-
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  if (pointer.active) {
-    disturbPortrait(pointer.x, pointer.y);
-  }
-
-  for (const pixel of pixels) {
-    const pull = introAssembling ? 0.011 : 0.07;
-    const friction = introAssembling ? 0.93 : 0.68;
-    pixel.vx += (pixel.homeX - pixel.x) * pull;
-    pixel.vy += (pixel.homeY - pixel.y) * pull;
-    pixel.vx *= friction;
-    pixel.vy *= friction;
-    pixel.spin *= 0.72;
-    pixel.angle += (pixel.homeAngle - pixel.angle) * (introAssembling ? 0.045 : 0.11) + pixel.spin;
-    pixel.x += pixel.vx;
-    pixel.y += pixel.vy;
-
-    drawPuzzlePiece(pixel);
-  }
-
-  animationId = requestAnimationFrame(animatePortrait);
-}
-
-function drawPuzzlePiece(pixel) {
-  const size = pixel.size;
-  const notch = size * 0.14;
-  const tab = size * 0.13;
-  ctx.save();
-  ctx.translate(pixel.x, pixel.y);
-  ctx.rotate(pixel.angle);
-  ctx.fillStyle = pixel.color;
-  ctx.strokeStyle = "rgba(6, 19, 37, 0.34)";
-  ctx.lineWidth = 0.55;
-  ctx.lineJoin = "round";
-  ctx.shadowBlur = 0;
-  ctx.beginPath();
-  ctx.moveTo(-size / 2, -size / 2);
-  ctx.lineTo(-tab, -size / 2);
-  ctx.lineTo(0, -size / 2 - (pixel.shape % 2 === 0 ? notch : -notch));
-  ctx.lineTo(tab, -size / 2);
-  ctx.lineTo(size / 2, -size / 2);
-  ctx.lineTo(size / 2, -tab);
-  ctx.lineTo(size / 2 + (pixel.shape % 3 === 0 ? notch : -notch), 0);
-  ctx.lineTo(size / 2, tab);
-  ctx.lineTo(size / 2, size / 2);
-  ctx.lineTo(tab, size / 2);
-  ctx.lineTo(0, size / 2 + (pixel.shape % 2 === 1 ? notch : -notch));
-  ctx.lineTo(-tab, size / 2);
-  ctx.lineTo(-size / 2, size / 2);
-  ctx.lineTo(-size / 2, tab);
-  ctx.lineTo(-size / 2 + (pixel.shape % 3 === 1 ? notch : -notch), 0);
-  ctx.lineTo(-size / 2, -tab);
-  ctx.closePath();
-  ctx.fill();
-  ctx.stroke();
-  ctx.restore();
-}
-
-function updatePointer(event) {
-  const heroRect = hero.getBoundingClientRect();
-  pointer.x = event.clientX - heroRect.left;
-  pointer.y = event.clientY - heroRect.top;
-  pointer.active = true;
-}
-
-portraitShell.addEventListener("pointermove", updatePointer);
-portraitShell.addEventListener("pointerenter", (event) => {
-  updatePointer(event);
-});
-portraitShell.addEventListener("pointerleave", () => {
-  pointer.active = false;
-});
-portraitShell.addEventListener("click", scatterPortrait);
-
-if (image.complete) {
-  initPortrait();
-} else {
-  image.addEventListener("load", initPortrait);
-}
-
-let portraitResizeTimer;
-window.addEventListener("resize", () => {
-  clearTimeout(portraitResizeTimer);
-  portraitResizeTimer = setTimeout(initPortrait, 140);
+const puzzlePortrait = createPuzzlePortrait({
+  hero,
+  canvas: document.getElementById("pixelPortrait"),
+  image: document.getElementById("portraitSource"),
+  shell: portraitShell,
 });
 
 const revealItems = document.querySelectorAll(".reveal-on-scroll");
@@ -804,11 +482,12 @@ function disturbPortraitOnWalkerOverlap(walkerRect) {
   if (!overlap) return;
 
   const heroRect = hero.getBoundingClientRect();
-  disturbPortrait(
+  const walkerSpeed = Math.hypot(walker.vx, walker.vy);
+  puzzlePortrait.disturb(
     walkerRect.left + walkerRect.width / 2 - heroRect.left,
     walkerRect.top + walkerRect.height / 2 - heroRect.top,
-    128,
-    6.2
+    136,
+    4.5 + Math.min(6, walkerSpeed * 1.6)
   );
 }
 
@@ -923,16 +602,13 @@ function endPokemonDrag(event) {
 
 function handleAnimationVisibility() {
   if (document.hidden) {
-    cancelAnimationFrame(animationId);
+    puzzlePortrait.pause();
     cancelAnimationFrame(walker.frameId);
-    animationId = 0;
     walker.frameId = 0;
     return;
   }
 
-  if (pixels.length && !animationId) {
-    animationId = requestAnimationFrame(animatePortrait);
-  }
+  puzzlePortrait.resume();
 
   if (walker.released && !walker.frameId) {
     walker.lastTime = 0;
@@ -943,22 +619,33 @@ function handleAnimationVisibility() {
 document.addEventListener("visibilitychange", handleAnimationVisibility);
 
 const typedIntro = document.getElementById("typedIntro");
-const introText = "Hello, Nick Here.";
+// Segments carry both the typing order and the colour, so the headline wording
+// can change without recalculating character offsets by hand.
+const introSegments = [
+  { text: "Hello, ", tone: "light" },
+  { text: "Nick", tone: "accent" },
+  { text: " Here.", tone: "light" },
+];
+const introText = introSegments.map((segment) => segment.text).join("");
 let typedIndex = 0;
 
-function renderTyped(text) {
-  const helloLength = Math.min(text.length, 6);
-  const nickStart = Math.min(Math.max(text.length, 7), 7);
-  const nickEnd = Math.min(text.length, 11);
-  const beforeNick = text.slice(helloLength, nickStart);
-  const afterNick = text.slice(nickEnd);
-  typedIntro.innerHTML = `
-    <span class="typed-white">${text.slice(0, helloLength)}</span>${beforeNick}<span class="typed-white">${text.slice(nickStart, nickEnd)}</span>${afterNick}<span class="type-cursor" aria-hidden="true"></span>
-  `;
+function renderTyped(revealedCount) {
+  let remaining = revealedCount;
+  const markup = introSegments
+    .map((segment) => {
+      if (remaining <= 0) return "";
+      const visible = segment.text.slice(0, remaining);
+      remaining -= visible.length;
+      // Non-breaking spaces keep the caret from drifting when a segment ends on
+      // a space mid-type.
+      return `<span class="typed-${segment.tone}">${visible.replaceAll(" ", "&nbsp;")}</span>`;
+    })
+    .join("");
+  typedIntro.innerHTML = `${markup}<span class="type-cursor" aria-hidden="true"></span>`;
 }
 
 function typeHeadline() {
-  renderTyped(introText.slice(0, typedIndex));
+  renderTyped(typedIndex);
   typedIndex += 1;
   if (typedIndex <= introText.length) {
     setTimeout(typeHeadline, typedIndex === 1 ? 350 : 78);
