@@ -21,6 +21,29 @@ export function initializeRevealAnimations(root = document) {
   return () => observer.disconnect();
 }
 
+// The header is sticky, so anchor targets land underneath it. Its height is
+// measured rather than hardcoded because the header wraps to two rows below 900px
+// and three below 560px, which no single CSS value covers.
+export function syncHeaderOffset(header = document.querySelector(".site-header")) {
+  if (!header) return () => {};
+
+  const apply = () => {
+    const height = Math.round(header.getBoundingClientRect().height);
+    document.documentElement.style.setProperty("--header-height", `${height}px`);
+  };
+
+  apply();
+
+  if (!("ResizeObserver" in window)) {
+    window.addEventListener("resize", apply);
+    return () => window.removeEventListener("resize", apply);
+  }
+
+  const observer = new ResizeObserver(apply);
+  observer.observe(header);
+  return () => observer.disconnect();
+}
+
 export function getRouteSlug(section) {
   const querySlug = new URLSearchParams(window.location.search).get("slug");
   if (querySlug) return querySlug;

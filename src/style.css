@@ -16,6 +16,9 @@
 
 html {
   scroll-behavior: smooth;
+  /* Clears the sticky header so an anchored section lands with its heading
+     visible. `--header-height` is kept in sync by syncHeaderOffset(). */
+  scroll-padding-top: calc(var(--header-height, 64px) + 26px);
   background: var(--bg);
 }
 
@@ -628,6 +631,13 @@ p {
   transform: translateY(0);
 }
 
+.about-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) clamp(240px, 24vw, 330px);
+  align-items: start;
+  gap: clamp(30px, 4vw, 66px);
+}
+
 .about-copy {
   max-width: 940px;
 }
@@ -646,6 +656,58 @@ p {
 
 .about-copy p:not(:last-child) {
   margin-bottom: 24px;
+}
+
+/* Square regardless of the photo's own aspect ratio, so the section keeps a
+   clean grid edge next to the copy. */
+.about-portrait {
+  position: relative;
+  aspect-ratio: 1;
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid rgba(148, 169, 209, 0.18);
+  border-radius: 20px;
+  background: var(--panel);
+  box-shadow: 0 26px 60px rgba(2, 9, 20, 0.42);
+  /* Rises and scales up together, matching the focus-list arrows. */
+  transform: translateY(30px) scale(0.955);
+  transition:
+    opacity 0.72s ease,
+    transform 0.82s cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 0.3s ease,
+    box-shadow 0.3s ease;
+  transition-delay: var(--reveal-delay, 130ms);
+}
+
+.about-portrait.is-visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.about-portrait img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  /* Keeps both faces in frame once the tall photo is cropped to a square. */
+  object-fit: cover;
+  object-position: center 16%;
+}
+
+.about-portrait::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(180deg, transparent 52%, rgba(4, 14, 28, 0.42));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.07),
+    inset 0 0 0 1px rgba(89, 241, 215, 0.06);
+  pointer-events: none;
+}
+
+.about-portrait:hover {
+  border-color: rgba(89, 241, 215, 0.34);
+  box-shadow: 0 26px 60px rgba(2, 9, 20, 0.52);
 }
 
 .about-focus-list {
@@ -1247,6 +1309,16 @@ p {
   .about-focus-list {
     grid-template-columns: 1fr;
     gap: 12px;
+  }
+
+  .about-layout {
+    grid-template-columns: 1fr;
+    gap: 34px;
+  }
+
+  .about-portrait {
+    width: 100%;
+    max-width: 380px;
   }
 
   .writing-grid {

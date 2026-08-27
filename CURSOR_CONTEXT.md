@@ -67,6 +67,7 @@ Vite uses `vite.config.js` to build four HTML entry points. During local develop
 
 - Responsive hero and About sections
 - Interactive jigsaw portrait (see **Puzzle portrait** below)
+- Square photo beside the About copy, popping in on scroll
 - Scroll-triggered reveal animations
 - Animated skill/interest items
 - Featured Musings loaded from published Sanity articles
@@ -103,6 +104,12 @@ Implementation notes worth preserving:
 - Cursor-driven releases use a much shorter hold than clicks and Pokemon hits, otherwise continuous mouse movement shoves pieces into a corner and piles them up.
 - Resize rebuilds are skipped unless the board geometry actually changed, because mobile browsers fire `resize` when the address bar hides.
 - Under `prefers-reduced-motion: reduce` the board renders once, fully assembled, and all scatter interactions are ignored.
+
+### Anchor scrolling
+
+`html` carries `scroll-padding-top: calc(var(--header-height) + 26px)` so header links such as About land with the section heading visible instead of tucked under the sticky header. `--header-height` is measured by `syncHeaderOffset()` rather than hardcoded, because the header wraps to two rows below 900px and three below 560px, growing from 60px to roughly 196px.
+
+The anchored sections deliberately do not carry `reveal-on-scroll` themselves; their heading blocks do. While a section held the class, its `translateY(34px)` shifted the element the browser was scrolling to, so the jump overshot by that amount on top of the header overlap.
 
 ### Nick's Musings
 

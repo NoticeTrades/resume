@@ -1,6 +1,7 @@
 import "./style.css";
 import { articles } from "./content/articles.js";
 import { createPuzzlePortrait } from "./lib/puzzlePortrait.js";
+import { syncHeaderOffset } from "./lib/pageUi.js";
 import {
   escapeHtml,
   loadLatestLearningNote,
@@ -153,41 +154,53 @@ app.innerHTML = `
       </div>
     </section>
 
-    <section class="about-section reveal-on-scroll" id="about">
-      <div class="section-heading">
+    <section class="about-section" id="about">
+      <div class="section-heading reveal-on-scroll">
         <h2>about me</h2>
         <span></span>
       </div>
-      <article class="about-copy reveal-on-scroll">
-        <p>
-          I work in <strong>financial planning</strong> for HVAC businesses,
-          building models, forecasts, and revenue projections from the assumptions
-          that drive real operating decisions.
-        </p>
-        <p>
-          Outside of work, I stay close to markets and technology. I am continuing
-          to develop my trading framework around index futures, mainly
-          <strong>NQ, ES, and YM</strong>, while studying AI, machine learning, and
-          automation as tools for better analysis.
-        </p>
-        <p>
-          I am also studying for the <strong>CMA</strong>, Certified Management
-          Accountant, license to keep sharpening how I think about finance,
-          strategy, and business performance.
-        </p>
-        <div class="about-focus-list" aria-label="Current focus areas">
-          <span style="--focus-delay: 120ms">Financial modeling</span>
-          <span style="--focus-delay: 240ms">CMA prep</span>
-          <span style="--focus-delay: 360ms">Student <small>(always learning)</small></span>
-          <span style="--focus-delay: 480ms">AI technology + workflows</span>
-          <span style="--focus-delay: 600ms">Trading</span>
-          <span style="--focus-delay: 720ms">Basketball</span>
-        </div>
-      </article>
+      <div class="about-layout">
+        <article class="about-copy reveal-on-scroll">
+          <p>
+            I work in <strong>financial planning</strong> for HVAC businesses,
+            building models, forecasts, and revenue projections from the assumptions
+            that drive real operating decisions.
+          </p>
+          <p>
+            Outside of work, I stay close to markets and technology. I am continuing
+            to develop my trading framework around index futures, mainly
+            <strong>NQ, ES, and YM</strong>, while studying AI, machine learning, and
+            automation as tools for better analysis.
+          </p>
+          <p>
+            I am also studying for the <strong>CMA</strong>, Certified Management
+            Accountant, license to keep sharpening how I think about finance,
+            strategy, and business performance.
+          </p>
+          <div class="about-focus-list" aria-label="Current focus areas">
+            <span style="--focus-delay: 120ms">Financial modeling</span>
+            <span style="--focus-delay: 240ms">CMA prep</span>
+            <span style="--focus-delay: 360ms">Student <small>(always learning)</small></span>
+            <span style="--focus-delay: 480ms">AI technology + workflows</span>
+            <span style="--focus-delay: 600ms">Trading</span>
+            <span style="--focus-delay: 720ms">Basketball</span>
+          </div>
+        </article>
+        <figure class="about-portrait reveal-on-scroll">
+          <img
+            src="/nick-about.webp"
+            alt="Nick and his girlfriend taking a mirror selfie"
+            width="471"
+            height="1024"
+            loading="lazy"
+            decoding="async"
+          />
+        </figure>
+      </div>
     </section>
 
-    <section class="til-home-section reveal-on-scroll" id="til">
-      <div class="section-heading til-home-heading">
+    <section class="til-home-section" id="til">
+      <div class="section-heading til-home-heading reveal-on-scroll">
         <div>
           <p class="section-kicker">a small idea worth keeping</p>
           <h2>Today I Learned</h2>
@@ -202,8 +215,8 @@ app.innerHTML = `
       </a>
     </section>
 
-    <section class="writing-section reveal-on-scroll" id="writing">
-      <div class="section-heading writing-heading">
+    <section class="writing-section" id="writing">
+      <div class="section-heading writing-heading reveal-on-scroll">
         <div>
           <p class="section-kicker">thoughts, observations & ideas</p>
           <h2>Nick's Musings</h2>
@@ -246,6 +259,8 @@ const puzzlePortrait = createPuzzlePortrait({
   image: document.getElementById("portraitSource"),
   shell: portraitShell,
 });
+
+syncHeaderOffset();
 
 const revealItems = document.querySelectorAll(".reveal-on-scroll");
 const revealObserver = new IntersectionObserver(

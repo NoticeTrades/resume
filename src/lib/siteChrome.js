@@ -1,4 +1,5 @@
 import { initializePokemonRelease } from "./pokemonRelease.js";
+import { syncHeaderOffset } from "./pageUi.js";
 
 function navLink(href, label, activePath) {
   const current = href === activePath ? ' aria-current="page"' : "";
@@ -51,5 +52,11 @@ export function renderSiteFooter() {
 }
 
 export function initializeInteriorChrome() {
-  return initializePokemonRelease();
+  const stopHeaderSync = syncHeaderOffset();
+  const stopPokemon = initializePokemonRelease();
+
+  return () => {
+    stopHeaderSync();
+    stopPokemon?.();
+  };
 }
