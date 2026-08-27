@@ -138,7 +138,7 @@ app.innerHTML = `
           type="button"
           aria-label="Scatter the puzzle portrait and let it rebuild itself"
         >
-          <img src="/nick-pixel-source.jpg" alt="" id="portraitSource" />
+          <img src="/nick-cutout.webp" alt="" id="portraitSource" />
         </button>
         <div class="hero-copy">
           <p class="eyebrow">finance / trading / technology</p>

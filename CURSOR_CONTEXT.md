@@ -84,15 +84,20 @@ The hero portrait is a real jigsaw rendered to the `#pixelPortrait` canvas by `s
 
 How it works:
 
-- A grid is derived from the `.portrait-shell` size, targeting roughly 58px pieces and clamping to 4–8 columns and 4–9 rows.
-- Seam directions are stored once per grid in shared `vertical` and `horizontal` arrays. A tab on one piece is always the mirrored socket on its neighbour, so pieces genuinely interlock. Border seams are flat.
-- Each piece is cut from `/nick-pixel-source.jpg` with a `Path2D` knob outline, tinted toward the navy/aqua palette, bevelled, and cached as its own offscreen canvas. The animation loop only draws these cached bitmaps, so pieces stay crisp and cheap to render.
+- The puzzle is a floating cutout of Nick, not a framed board. There is no tray, no rectangle, and no socket drawn behind an absent piece: a vacated slot reads as open hero.
+- A grid is derived from the `.portrait-shell` size, targeting roughly 42px pieces and clamping to 5–10 columns and 6–12 rows. The grid is finer than a classic jigsaw because the outer edge of the puzzle is a silhouette, and smaller pieces trace it more faithfully.
+- Which grid cells become pieces is read from the alpha channel of `/nick-cutout.webp`. Cells below `KEEP_THRESHOLD` coverage are dropped, and a piece's edge is flat wherever its neighbour was dropped, so the perimeter reads as a cut edge instead of stray tabs.
+- Seam directions are stored once per grid in shared `vertical` and `horizontal` arrays. A tab on one piece is always the mirrored socket on its neighbour, so pieces genuinely interlock.
+- Each piece is cut with a `Path2D` knob outline, tinted toward the navy/aqua palette, bevelled, and cached as its own offscreen canvas. Tints and bevels are then trimmed back to the cutout's alpha, so nothing paints outside the silhouette. The animation loop only draws these cached bitmaps, so pieces stay crisp and cheap to render.
+- The snapshot crops Nick mid-chest and clips the newspaper at the frame, so the bottom and side bands are faded out. Without that the silhouette would end on ruler-straight lines and read as a cropped rectangle.
 - The intro is a choreographed tween, not physics. Pieces fly in from their own side of the board with delays assigned by rank order of distance from centre, so they click into place at an even cadence from the outside in over roughly two seconds.
 - Once seated, a piece is pinned exactly to its slot and skipped by the physics step, which is what keeps the assembled portrait sharp. A nearby cursor only applies a small smoothed magnetic offset.
-- Clicking the portrait, sweeping the cursor quickly across it, or a Pokemon colliding with it unlocks pieces into free motion. Each piece drifts, then a damped spring pulls it home and snaps it back into its slot. Empty sockets are drawn while a piece is away.
+- Clicking the portrait, sweeping the cursor quickly across it, or a Pokemon colliding with it unlocks pieces into free motion. Each piece drifts, then a damped spring pulls it home and snaps it back into its slot.
 
 Implementation notes worth preserving:
 
+- `/nick-cutout.webp` is background-removed and trimmed to the subject, which is why the image is contained inside the board rather than cropped to fill it. `/nick-pixel-source.jpg` is the untouched original and is no longer rendered. The cutout was produced with `rembg`'s `u2net_human_seg` model plus alpha matting; general-purpose models kept only the head and dropped the jacket and newspaper.
+- The seat highlight is a prerendered bitmap trimmed the same way the artwork is. Stroking the piece outline directly flashed an aqua rectangle into empty hero for every piece on the silhouette.
 - Every timestamp comes from one clock inside the animation loop. Mixing `performance.now()` with `requestAnimationFrame` timestamps previously left the intro permanently stalled at zero opacity.
 - Piece impulses are capped by `MAX_PIECE_SPEED` and `MAX_SPIN`. The Pokemon and a fast cursor both push every frame they overlap a piece, so uncapped impulses compound.
 - Cursor-driven releases use a much shorter hold than clicks and Pokemon hits, otherwise continuous mouse movement shoves pieces into a corner and piles them up.

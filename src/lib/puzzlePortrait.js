@@ -2,11 +2,23 @@ const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
 const PHYSICS_STEP = 1000 / 60;
 const MAX_STEPS_PER_FRAME = 4;
 
-const TARGET_PIECE_SIZE = 58;
-const MIN_COLUMNS = 4;
-const MAX_COLUMNS = 8;
-const MIN_ROWS = 4;
-const MAX_ROWS = 9;
+// The grid is finer than a classic jigsaw because the outer edge of the board is
+// the subject's silhouette: smaller pieces trace it more faithfully.
+const TARGET_PIECE_SIZE = 42;
+const MIN_COLUMNS = 5;
+const MAX_COLUMNS = 10;
+const MIN_ROWS = 6;
+const MAX_ROWS = 12;
+// Share of a cell that must fall inside the subject for the piece to exist.
+const KEEP_THRESHOLD = 0.16;
+const MIN_KEPT_PIECES = 8;
+const ALPHA_SAMPLES_PER_CELL = 6;
+// Bands over which the portrait dissolves at the cropped edges of the snapshot,
+// and how transparent each band gets at its outermost point.
+const HEM_FADE_SPAN = 0.2;
+const HEM_FADE_DEPTH = 0.9;
+const SIDE_FADE_SPAN = 0.1;
+const SIDE_FADE_DEPTH = 0.75;
 
 // Knob measurements are fractions of the shorter piece dimension so tabs stay
 // proportional on every screen size. The ball is wider than the neck, which is
@@ -70,6 +82,8 @@ export function createPuzzlePortrait({ hero, canvas, image, shell }) {
   let pieces = [];
   let seams = null;
   let seamKey = "";
+  // Per-cell flags for which grid cells fall inside the subject silhouette.
+  let kept = [];
   let viewWidth = 0;
   let viewHeight = 0;
   let phase = "empty";
@@ -152,13 +166,79 @@ export function createPuzzlePortrait({ hero, canvas, image, shell }) {
     seamKey = key;
   }
 
+  // A cell only interlocks where it has a surviving neighbour. Everywhere else the
+  // edge is straight, so the silhouette reads as a cut edge rather than stray tabs.
+  function isKept(column, row) {
+    return Boolean(kept[row]?.[column]);
+  }
+
   function seamSigns(column, row) {
     return {
-      top: row === 0 ? 0 : -seams.horizontal[row - 1][column],
-      right: column === board.columns - 1 ? 0 : seams.vertical[row][column],
-      bottom: row === board.rows - 1 ? 0 : seams.horizontal[row][column],
-      left: column === 0 ? 0 : -seams.vertical[row][column - 1],
+      top: isKept(column, row - 1) ? -seams.horizontal[row - 1][column] : 0,
+      right: isKept(column + 1, row) ? seams.vertical[row][column] : 0,
+      bottom: isKept(column, row + 1) ? seams.horizontal[row][column] : 0,
+      left: isKept(column - 1, row) ? -seams.vertical[row][column - 1] : 0,
     };
+  }
+
+  // Which cells the subject actually occupies is read from the cutout's alpha
+  // channel, so the outer edge of the puzzle is Nick's silhouette and no chair or
+  // wall ever makes it into a piece.
+  function buildKeepGrid() {
+    const coverage = sampleAlphaCoverage();
+    const grid = [];
+    let count = 0;
+
+    for (let row = 0; row < board.rows; row += 1) {
+      const line = [];
+      for (let column = 0; column < board.columns; column += 1) {
+        const inside = coverage[row * board.columns + column] >= KEEP_THRESHOLD;
+        line.push(inside);
+        if (inside) count += 1;
+      }
+      grid.push(line);
+    }
+
+    // A tainted canvas or a still-decoding image would starve the board, so fall
+    // back to the full grid rather than rendering an almost empty hero.
+    if (count < MIN_KEPT_PIECES) {
+      return grid.map((line) => line.map(() => true));
+    }
+
+    return grid;
+  }
+
+  function sampleAlphaCoverage() {
+    const cells = new Float32Array(board.columns * board.rows);
+    const samplesX = board.columns * ALPHA_SAMPLES_PER_CELL;
+    const samplesY = board.rows * ALPHA_SAMPLES_PER_CELL;
+    const probe = document.createElement("canvas");
+    probe.width = samplesX;
+    probe.height = samplesY;
+
+    const pctx = probe.getContext("2d", { willReadFrequently: true });
+    const fit = fitImage();
+    pctx.scale(samplesX / board.width, samplesY / board.height);
+    pctx.drawImage(image, fit.left, fit.top, fit.width, fit.height);
+
+    let data;
+    try {
+      data = pctx.getImageData(0, 0, samplesX, samplesY).data;
+    } catch {
+      return cells;
+    }
+
+    const perCell = ALPHA_SAMPLES_PER_CELL * ALPHA_SAMPLES_PER_CELL;
+    for (let y = 0; y < samplesY; y += 1) {
+      const row = Math.floor(y / ALPHA_SAMPLES_PER_CELL);
+      for (let x = 0; x < samplesX; x += 1) {
+        const column = Math.floor(x / ALPHA_SAMPLES_PER_CELL);
+        cells[row * board.columns + column] +=
+          data[(y * samplesX + x) * 4 + 3] / 255 / perCell;
+      }
+    }
+
+    return cells;
   }
 
   function buildPiecePath(piece, offsetX, offsetY) {
@@ -194,21 +274,22 @@ export function createPuzzlePortrait({ hero, canvas, image, shell }) {
     pctx.translate(margin, margin);
 
     const path = buildPiecePath(piece, 0, 0);
-    const cover = coverImage();
-    const originX = cover.left - piece.column * width;
-    const originY = cover.top - piece.row * height;
+    const fit = fitImage();
+    const originX = fit.left - piece.column * width;
+    const originY = fit.top - piece.row * height;
 
     pctx.save();
     pctx.clip(path);
 
-    pctx.filter = "saturate(0.74) contrast(1.1) brightness(0.9)";
-    pctx.drawImage(image, originX, originY, cover.width, cover.height);
+    pctx.filter = "saturate(0.9) contrast(1.05) brightness(1.04)";
+    pctx.drawImage(image, originX, originY, fit.width, fit.height);
     pctx.filter = "none";
 
-    // Multiplying by a cool blue drops the photo into the hero's navy range and
-    // strips the warm cast without flattening the face.
+    // Multiplying by a cool blue nudges the photo toward the hero's navy range
+    // and takes off the warm cast. It stays light: with the room removed there is
+    // no busy background left to suppress, only a face to keep readable.
     pctx.globalCompositeOperation = "multiply";
-    pctx.fillStyle = "rgb(136, 178, 214)";
+    pctx.fillStyle = "rgb(198, 218, 238)";
     pctx.fillRect(-margin, -margin, bitmapWidth, bitmapHeight);
 
     const tint = pctx.createLinearGradient(
@@ -217,9 +298,9 @@ export function createPuzzlePortrait({ hero, canvas, image, shell }) {
       -piece.column * width + board.width,
       -piece.row * height + board.height
     );
-    tint.addColorStop(0, "rgba(9, 34, 64, 0.55)");
-    tint.addColorStop(0.6, "rgba(14, 46, 80, 0.3)");
-    tint.addColorStop(1, "rgba(89, 241, 215, 0.22)");
+    tint.addColorStop(0, "rgba(9, 34, 64, 0.3)");
+    tint.addColorStop(0.6, "rgba(14, 46, 80, 0.16)");
+    tint.addColorStop(1, "rgba(89, 241, 215, 0.2)");
     pctx.globalCompositeOperation = "soft-light";
     pctx.fillStyle = tint;
     pctx.fillRect(-margin, -margin, bitmapWidth, bitmapHeight);
@@ -233,8 +314,8 @@ export function createPuzzlePortrait({ hero, canvas, image, shell }) {
       board.height * 0.74
     );
     vignette.addColorStop(0, "rgba(5, 17, 33, 0)");
-    vignette.addColorStop(0.65, "rgba(5, 17, 33, 0.42)");
-    vignette.addColorStop(1, "rgba(5, 17, 33, 0.88)");
+    vignette.addColorStop(0.65, "rgba(5, 17, 33, 0.08)");
+    vignette.addColorStop(1, "rgba(5, 17, 33, 0.24)");
     pctx.globalCompositeOperation = "source-atop";
     pctx.fillStyle = vignette;
     pctx.fillRect(-margin, -margin, bitmapWidth, bitmapHeight);
@@ -244,48 +325,127 @@ export function createPuzzlePortrait({ hero, canvas, image, shell }) {
     // inner half. Offsetting them gives the piece a lit and a shaded edge.
     pctx.lineJoin = "round";
     pctx.save();
-    pctx.translate(1.5, 1.5);
-    pctx.strokeStyle = "rgba(2, 9, 18, 0.62)";
-    pctx.lineWidth = 3.4;
+    pctx.translate(1.2, 1.2);
+    pctx.strokeStyle = "rgba(2, 9, 18, 0.34)";
+    pctx.lineWidth = 2.4;
     pctx.stroke(path);
     pctx.restore();
 
     pctx.save();
-    pctx.translate(-1, -1);
-    pctx.strokeStyle = "rgba(196, 240, 255, 0.12)";
-    pctx.lineWidth = 1.6;
+    pctx.translate(-0.9, -0.9);
+    pctx.strokeStyle = "rgba(222, 248, 255, 0.16)";
+    pctx.lineWidth = 1.3;
     pctx.stroke(path);
     pctx.restore();
     pctx.restore();
 
-    pctx.strokeStyle = "rgba(3, 11, 22, 0.9)";
-    pctx.lineWidth = 1;
+    pctx.strokeStyle = "rgba(6, 18, 32, 0.5)";
+    pctx.lineWidth = 0.8;
     pctx.lineJoin = "round";
     pctx.stroke(path);
 
-    pctx.strokeStyle = "rgba(89, 241, 215, 0.08)";
+    pctx.strokeStyle = "rgba(89, 241, 215, 0.1)";
     pctx.lineWidth = 0.6;
     pctx.stroke(path);
+
+    // Everything above is trimmed back to the cutout's own alpha, so tints and
+    // bevels stop at the silhouette instead of outlining an invisible rectangle.
+    pctx.globalCompositeOperation = "destination-in";
+    pctx.drawImage(image, originX, originY, fit.width, fit.height);
+
+    applyEdgeFade(pctx, piece, margin, bitmapWidth, bitmapHeight);
 
     piece.bitmap = bitmap;
     piece.bitmapWidth = bitmapWidth;
     piece.bitmapHeight = bitmapHeight;
     piece.pivotX = margin + width / 2;
     piece.pivotY = margin + height / 2;
+
+    piece.flashBitmap = renderFlashBitmap(piece, path, fit, {
+      margin,
+      bitmapWidth,
+      bitmapHeight,
+      ratio,
+      originX,
+      originY,
+    });
   }
 
-  function coverImage() {
+  // The seat highlight has to be trimmed to the cutout the same way the artwork
+  // is, otherwise pieces on the silhouette flash an outline into empty hero.
+  function renderFlashBitmap(piece, path, fit, layout) {
+    const { margin, bitmapWidth, bitmapHeight, ratio, originX, originY } = layout;
+    const bitmap = document.createElement("canvas");
+    bitmap.width = Math.round(bitmapWidth * ratio);
+    bitmap.height = Math.round(bitmapHeight * ratio);
+
+    const fctx = bitmap.getContext("2d");
+    fctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+    fctx.translate(margin, margin);
+
+    fctx.lineJoin = "round";
+    fctx.strokeStyle = "rgb(89, 241, 215)";
+    fctx.lineWidth = 1.6;
+    fctx.stroke(path);
+
+    fctx.globalCompositeOperation = "destination-in";
+    fctx.drawImage(image, originX, originY, fit.width, fit.height);
+    fctx.globalCompositeOperation = "source-over";
+
+    applyEdgeFade(fctx, piece, margin, bitmapWidth, bitmapHeight);
+
+    return bitmap;
+  }
+
+  // The snapshot crops Nick mid-chest and clips the newspaper at the frame, so the
+  // silhouette would otherwise end on ruler-straight lines. Fading the outer bands
+  // lets the portrait dissolve into the hero instead of reading as a cut rectangle.
+  function applyEdgeFade(pctx, piece, margin, bitmapWidth, bitmapHeight) {
+    const offsetX = -piece.column * board.pieceWidth;
+    const offsetY = -piece.row * board.pieceHeight;
+
+    const bands = [
+      {
+        from: [0, offsetY + board.height * (1 - HEM_FADE_SPAN)],
+        to: [0, offsetY + board.height],
+        depth: HEM_FADE_DEPTH,
+      },
+      {
+        from: [offsetX + board.width * SIDE_FADE_SPAN, 0],
+        to: [offsetX, 0],
+        depth: SIDE_FADE_DEPTH,
+      },
+      {
+        from: [offsetX + board.width * (1 - SIDE_FADE_SPAN), 0],
+        to: [offsetX + board.width, 0],
+        depth: SIDE_FADE_DEPTH,
+      },
+    ];
+
+    pctx.globalCompositeOperation = "destination-out";
+    for (const band of bands) {
+      const fade = pctx.createLinearGradient(...band.from, ...band.to);
+      fade.addColorStop(0, "rgba(0, 0, 0, 0)");
+      fade.addColorStop(1, `rgba(0, 0, 0, ${band.depth})`);
+      pctx.fillStyle = fade;
+      pctx.fillRect(-margin, -margin, bitmapWidth, bitmapHeight);
+    }
+    pctx.globalCompositeOperation = "source-over";
+  }
+
+  // The cutout is already trimmed to the subject, so it is contained inside the
+  // board rather than cropped to fill it: cropping would slice the silhouette.
+  function fitImage() {
     const naturalWidth = image.naturalWidth || board.width;
     const naturalHeight = image.naturalHeight || board.height;
-    const scale =
-      Math.max(board.width / naturalWidth, board.height / naturalHeight) * 1.04;
+    const scale = Math.min(board.width / naturalWidth, board.height / naturalHeight);
     const width = naturalWidth * scale;
     const height = naturalHeight * scale;
     return {
       width,
       height,
       left: (board.width - width) / 2,
-      top: (board.height - height) / 2 + board.height * 0.012,
+      top: board.height - height,
     };
   }
 
@@ -294,6 +454,7 @@ export function createPuzzlePortrait({ hero, canvas, image, shell }) {
 
     resizeCanvas();
     buildSeams();
+    kept = buildKeepGrid();
 
     const centerX = board.x + board.width / 2;
     const centerY = board.y + board.height / 2;
@@ -302,6 +463,8 @@ export function createPuzzlePortrait({ hero, canvas, image, shell }) {
 
     for (let row = 0; row < board.rows; row += 1) {
       for (let column = 0; column < board.columns; column += 1) {
+        if (!isKept(column, row)) continue;
+
         const piece = {
           column,
           row,
@@ -310,11 +473,6 @@ export function createPuzzlePortrait({ hero, canvas, image, shell }) {
           homeY: board.y + (row + 0.5) * board.pieceHeight,
         };
 
-        piece.homePath = buildPiecePath(
-          piece,
-          board.x + column * board.pieceWidth,
-          board.y + row * board.pieceHeight
-        );
         renderPieceBitmap(piece);
 
         const fromCenter = Math.hypot(piece.homeX - centerX, piece.homeY - centerY);
@@ -566,26 +724,10 @@ export function createPuzzlePortrait({ hero, canvas, image, shell }) {
     ctx.clearRect(0, 0, viewWidth, viewHeight);
     if (!pieces.length) return;
 
-    for (const piece of pieces) {
-      const offset = Math.hypot(piece.x + piece.hoverX - piece.homeX, piece.y + piece.hoverY - piece.homeY);
-      if (piece.locked && offset < 1.2 && piece.flash <= 0) continue;
-
-      ctx.fillStyle = "rgba(3, 11, 22, 0.72)";
-      ctx.fill(piece.homePath);
-      ctx.strokeStyle = "rgba(89, 241, 215, 0.1)";
-      ctx.lineWidth = 1;
-      ctx.stroke(piece.homePath);
-    }
-
+    // No sockets are drawn behind absent pieces: the vacated slot should read as
+    // open hero, which is what keeps the portrait a floating cutout.
     drawPieces(true);
     drawPieces(false);
-
-    for (const piece of pieces) {
-      if (piece.flash <= 0) continue;
-      ctx.strokeStyle = `rgba(89, 241, 215, ${(piece.flash * FLASH_STRENGTH).toFixed(3)})`;
-      ctx.lineWidth = 1.4;
-      ctx.stroke(piece.homePath);
-    }
 
     if (phase === "live" && !prefersReducedMotion()) {
       drawSheen(now);
@@ -616,6 +758,18 @@ export function createPuzzlePortrait({ hero, canvas, image, shell }) {
         piece.bitmapWidth,
         piece.bitmapHeight
       );
+
+      if (piece.flash > 0) {
+        ctx.globalAlpha = piece.alpha * piece.flash * FLASH_STRENGTH;
+        ctx.drawImage(
+          piece.flashBitmap,
+          -piece.pivotX,
+          -piece.pivotY,
+          piece.bitmapWidth,
+          piece.bitmapHeight
+        );
+      }
+
       ctx.restore();
     }
   }

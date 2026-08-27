@@ -471,44 +471,26 @@ a {
   touch-action: manipulation;
 }
 
+/* Rim light behind the cutout. There is no tray or frame: the jigsaw is the
+   silhouette itself, so anything rectangular here would give the shape away. */
 .portrait-shell::before {
   content: "";
   position: absolute;
-  inset: 11% 4% 3%;
-  border-radius: 42% 42% 12% 12%;
-  background: rgba(89, 241, 215, 0.05);
-  filter: blur(38px);
+  inset: 9% 6% 4%;
+  border-radius: 46% 46% 16% 16%;
+  background: rgba(89, 241, 215, 0.07);
+  filter: blur(46px);
+  transition: background 0.35s ease;
 }
 
-/* Recessed tray the jigsaw sits in, so scattered pieces read as lifted off a board. */
-.portrait-shell::after {
-  content: "";
-  position: absolute;
-  inset: -14px;
-  border: 1px solid rgba(89, 241, 215, 0.14);
-  border-radius: 18px;
-  background:
-    linear-gradient(160deg, rgba(11, 32, 57, 0.55), rgba(5, 17, 33, 0.72));
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.05),
-    inset 0 -18px 36px rgba(3, 11, 22, 0.5),
-    0 24px 60px rgba(2, 9, 20, 0.42);
-  transition: border-color 0.35s ease, box-shadow 0.35s ease;
-}
-
-.portrait-shell:hover::after {
-  border-color: rgba(89, 241, 215, 0.24);
+.portrait-shell:hover::before {
+  background: rgba(89, 241, 215, 0.11);
 }
 
 .portrait-shell:focus-visible {
-  outline: none;
-}
-
-.portrait-shell:focus-visible::after {
-  border-color: rgba(89, 241, 215, 0.7);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.05),
-    0 0 0 3px rgba(89, 241, 215, 0.22);
+  outline: 2px solid rgba(89, 241, 215, 0.7);
+  outline-offset: 6px;
+  border-radius: 14px;
 }
 
 #portraitSource {
