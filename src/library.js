@@ -20,8 +20,28 @@ const resourceSlug = getRouteSlug("library");
 let cleanupChrome = () => {};
 let cleanupReveals = () => {};
 
+const STUDIO_URL = "https://bynickthomas.sanity.studio/";
+const CMA_IDENTITY_PATTERN = /\b(cma|gleim|certified management accountant)\b/i;
+
 function statusKey(status = "") {
   return status.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+}
+
+function resourceIdentityText(resource = {}) {
+  return [resource.title, resource.resourceType, resource.category, resource.authorCreator, ...(resource.tags ?? [])]
+    .filter(Boolean)
+    .join(" ");
+}
+
+function isCmaStudyResource(resource) {
+  return CMA_IDENTITY_PATTERN.test(resourceIdentityText(resource));
+}
+
+function findCurrentlyLearningCma(resources = []) {
+  const matches = resources.filter(
+    (resource) => resource.status === "Currently Learning" && isCmaStudyResource(resource)
+  );
+  return matches.find((resource) => resource.featured) ?? matches[0] ?? null;
 }
 
 function clampProgress(value) {
@@ -105,7 +125,34 @@ function renderResourceCard(resource, index) {
   `;
 }
 
+function renderCmaStudyCallout(resource) {
+  const body = resource
+    ? `<div class="cma-study-card">${renderResourceCard(resource, 0)}</div>`
+    : `<div class="learning-empty reveal-on-scroll">
+        <strong>CMA study is not on this shelf yet.</strong>
+        Publish a Currently Learning CMA / Gleim CMA Part 1 Learning Resource in Studio.
+        Mention CMA or Gleim in the title, category, or tags—no new document type needed.
+        <a class="resource-external" href="${STUDIO_URL}" target="_blank" rel="noreferrer">
+          Open Sanity Studio <span aria-hidden="true">↗</span>
+        </a>
+      </div>`;
+
+  return `
+    <section class="cma-study" aria-labelledby="cmaStudyTitle">
+      <div class="learning-toolbar reveal-on-scroll">
+        <div>
+          <p class="section-kicker">study in public</p>
+          <h2 id="cmaStudyTitle">Currently learning CMA</h2>
+        </div>
+        <p class="learning-count">${resource ? "From the published shelf" : "Waiting on Studio"}</p>
+      </div>
+      ${body}
+    </section>
+  `;
+}
+
 function renderLibrary(resources) {
+  const cmaResource = findCurrentlyLearningCma(resources);
   const cards = resources.length
     ? resources.map(renderResourceCard).join("")
     : `<div class="learning-empty reveal-on-scroll">
@@ -123,6 +170,7 @@ function renderLibrary(resources) {
           shaping what I know—and what I am still working to understand.
         </p>
       </section>
+      ${renderCmaStudyCallout(cmaResource)}
       <section aria-labelledby="libraryTitle">
         <div class="learning-toolbar reveal-on-scroll">
           <h2 id="libraryTitle">On the shelf</h2>
@@ -255,7 +303,7 @@ function renderPage(content) {
 
 function initializeFilters(resources) {
   const buttons = document.querySelectorAll("[data-resource-filter]");
-  const cards = document.querySelectorAll(".resource-card");
+  const cards = document.querySelectorAll("#resourceGrid .resource-card");
   const count = document.getElementById("learningCount");
   const empty = document.getElementById("resourceFilterEmpty");
 

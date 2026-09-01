@@ -79,6 +79,28 @@
   color: #ddfff9;
 }
 
+.cma-study {
+  margin-bottom: 64px;
+}
+
+.cma-study .learning-toolbar {
+  align-items: flex-end;
+}
+
+.cma-study-card {
+  max-width: 420px;
+  padding-top: 24px;
+}
+
+.cma-study .learning-empty {
+  margin-top: 24px;
+}
+
+.cma-study .learning-empty .resource-external {
+  justify-content: center;
+  margin-top: 18px;
+}
+
 .resource-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -625,10 +647,19 @@
     font-size: clamp(44px, 15vw, 66px);
   }
 
-  .learning-toolbar {
+  .learning-toolbar,
+  .cma-study .learning-toolbar {
     align-items: flex-start;
     flex-direction: column;
     gap: 10px;
+  }
+
+  .cma-study {
+    margin-bottom: 48px;
+  }
+
+  .cma-study-card {
+    max-width: none;
   }
 
   .resource-grid {
