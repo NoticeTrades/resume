@@ -1,0 +1,12 @@
+feature: writing
+entry: header link Musings
+driven: 2026-09-01T22:57:00Z
+action: clicked Main navigation link named Musings, then first .writing-library-card
+action-url: http://127.0.0.1:5173/writing/
+action-h1: Nick's Musings
+result-url: http://127.0.0.1:5173/writing/?article=the-quiet-value-of-changing-your-mind
+result-h1: The Quiet Value of Changing Your Mind
+result-back: ← All musings
+result-sample: true
+side-effect: URL gained ?article=the-quiet-value-of-changing-your-mind
+note: After ~2s a successful empty Sanity response can replace sample cards with empty copy. Card was clicked on first paint.

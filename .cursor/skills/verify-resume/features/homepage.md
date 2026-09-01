@@ -40,6 +40,7 @@ Preconditions:
 
 ## Gotchas
 
+- Header labels render in CSS uppercase. Drive them as `Home`, `About`, `Musings`, `Library`, and `TIL` as in the markup. `control-resume` matches those names case-insensitively.
 - The homepage wordmark is a reload button, not a link. Interior wordmarks are links to `/`.
 - The `h1` text types in over about two seconds. The accessible name `Hello, Nick Here.` is present immediately.
 - Featured musings first render from local samples, then may replace with Sanity. Wait for `.writing-card` or the empty state before asserting titles.

@@ -452,10 +452,16 @@ function accessibleName(el) {
   if (labelled) return labelled.trim();
   const ids = el.getAttribute("aria-labelledby");
   if (ids) {
-    const joined = ids.split(/\s+/).map((id) => document.getElementById(id)?.innerText || "").join(" ").replace(/\s+/g, " ").trim();
+    const joined = ids.split(/\s+/).map((id) => (document.getElementById(id)?.textContent || "")).join(" ").replace(/\s+/g, " ").trim();
     if (joined) return joined;
   }
-  return (el.innerText || el.textContent || "").replace(/\s+/g, " ").trim();
+  return (el.textContent || "").replace(/\s+/g, " ").trim();
+}
+function nameEquals(actual, expected) {
+  return actual.toLowerCase() === expected.toLowerCase();
+}
+function nameIncludes(actual, expected) {
+  return actual.toLowerCase().includes(expected.toLowerCase());
 }
 function matchesRole(el, role) {
   const explicit = (el.getAttribute("role") || "").toLowerCase();
@@ -473,8 +479,8 @@ function findByRole(role, name) {
   const nodes = [...document.querySelectorAll("a, button, nav, h1, h2, h3, h4, [role], [aria-label]")];
   const matches = nodes.filter((el) => matchesRole(el, role));
   if (!name) return matches[0] || null;
-  return matches.find((el) => accessibleName(el) === name)
-    || matches.find((el) => accessibleName(el).includes(name))
+  return matches.find((el) => nameEquals(accessibleName(el), name))
+    || matches.find((el) => nameIncludes(accessibleName(el), name))
     || null;
 }
 function dumpAria() {
@@ -486,7 +492,10 @@ function dumpAria() {
       || (el.tagName === "NAV" ? "navigation" : "")
       || (/^H[1-6]$/.test(el.tagName) ? "heading" : "");
     const name = accessibleName(el);
-    if (role && name) lines.push(`${"  ".repeat(depth)}${role}${el.tagName.startsWith("H") ? ` ${el.tagName.toLowerCase()}` : ""}: ${name}`);
+    if (role && name) {
+      const heading = el.tagName.startsWith("H") ? " " + el.tagName.toLowerCase() : "";
+      lines.push("  ".repeat(depth) + role + heading + ": " + name);
+    }
     for (const child of el.children) walk(child, depth + (role && name ? 1 : 0));
   };
   walk(document.body, 0);
@@ -553,18 +562,29 @@ async function cmdBrowser(flags) {
     await withPage(async (cdp) => {
       const result = await evaluate(
         cdp,
-        `(${PAGE_HELPERS}
-        (() => {
+        `(async () => {
+          ${PAGE_HELPERS}
           const selector = ${JSON.stringify(selector || "")};
           const role = ${JSON.stringify(role || "")};
           const name = ${JSON.stringify(name || "")};
-          const el = selector ? document.querySelector(selector) : findByRole(role, name);
+          const started = Date.now();
+          let el = null;
+          while (Date.now() - started < 5000) {
+            el = selector ? document.querySelector(selector) : findByRole(role, name);
+            if (el) break;
+            await new Promise((resolve) => setTimeout(resolve, 100));
+          }
           if (!el) throw new Error(selector ? "No node for " + selector : "No " + role + " named " + name);
           el.click();
           return { tag: el.tagName, name: accessibleName(el), href: el.href || "", pressed: el.getAttribute("aria-pressed") };
-        })())`
+        })()`
       );
-      await delay(250);
+      try {
+        await cdp.waitEvent("Page.frameNavigated", 4000);
+        await cdp.waitEvent("Page.loadEventFired", 15000);
+      } catch {
+        await delay(400);
+      }
       await waitForApp(cdp).catch(() => {});
       const page = await evaluate(cdp, "({ title: document.title, url: location.href, h1: document.querySelector('h1')?.textContent?.trim() || '' })");
       process.stdout.write(`ok click ${result.tag} ${result.name}\nhref=${result.href}\nurl=${page.url}\nh1=${page.h1}\n`);
@@ -599,6 +619,13 @@ async function cmdBrowser(flags) {
     return;
   }
 
+  if (action === "pause") {
+    const ms = Number(flags.ms || flags._[1] || 1000);
+    await delay(ms);
+    process.stdout.write(`ok pause ${ms}\n`);
+    return;
+  }
+
   if (action === "wait") {
     const selector = flags.selector || flags._[1];
     if (!selector) die("Usage: control-resume browser wait --selector .writing-card");
@@ -613,7 +640,7 @@ async function cmdBrowser(flags) {
     const out = flags.path || flags.out;
     if (!out) die("Usage: control-resume browser snapshot --aria --path .cursor/skills/verify-resume/evidence/page.aria.txt");
     await withPage(async (cdp) => {
-      const dump = await evaluate(cdp, `(${PAGE_HELPERS} dumpAria())`);
+      const dump = await evaluate(cdp, `(() => { ${PAGE_HELPERS} return dumpAria(); })()`);
       const body = [`title: ${dump.title}`, `url: ${dump.url}`, "", ...dump.lines].join("\n") + "\n";
       const saved = writeOut(out, body);
       process.stdout.write(`wrote ${saved}\n`);
@@ -645,6 +672,7 @@ function usage() {
   browser click --role link --name "Musings"
   browser click --selector "[data-filter=\\"Philosophy\\"]"
   browser text --selector h1
+  browser pause --ms 2000
   browser wait --selector .writing-card
   browser eval --js "document.title"
   browser snapshot --aria --path evidence/page.aria.txt

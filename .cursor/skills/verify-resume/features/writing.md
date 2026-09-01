@@ -32,10 +32,12 @@ Preconditions:
 - **Sample fallback.** If the article body includes `Sample layout`, record `writing-sample`. That is valid when Sanity did not replace the local articles. Live articles must not show that aside.
 - **Return to index.** Choose `← All musings`. Run `control-resume browser click --selector '.article-back'`. URL is `/writing/` without `article` and the card list is back.
 - **Direct detail entry.** Run `control-resume browser goto --path '/writing/?article=the-quiet-value-of-changing-your-mind'`. If that slug exists (sample or live), the detail `h1` is `The Quiet Value of Changing Your Mind`. If live Sanity no longer has that slug, the index renders instead. Record which outcome you got.
-- **Proof.** Capture the index and one detail view. Run `control-resume browser snapshot --aria --path .cursor/skills/verify-resume/evidence/writing/result.aria.txt` and `control-resume browser screenshot --path .cursor/skills/verify-resume/evidence/writing/result.png`. The artifacts must show the musing heading and the back link on detail, or the card list on index.
+- **Proof.** Capture the index at the click and the detail after the card opens. Run `control-resume browser snapshot --aria --path .cursor/skills/verify-resume/evidence/writing/action-index.aria.txt` and `control-resume browser screenshot --path .cursor/skills/verify-resume/evidence/writing/action-index.png` on the list, then the same commands with `result-detail.aria.txt` and `result-detail.png` on the article. The detail artifacts must show the musing heading and `← All musings`.
 
 ## Gotchas
 
+- The header link name is `Musings` in markup. CSS shows `MUSINGS`. Use `--name "Musings"`.
+- First paint can show the three local sample musings. A successful empty Sanity response then replaces them with `The next musing starts here.` Click a card as soon as it appears, or wait ~2s and treat the settled empty copy as valid.
 - Sanity may replace the sample list after first paint. Wait for cards before reading titles.
 - Writing filter buttons do not use `aria-pressed`. Use `is-active` and visible vs `[hidden]` cards.
 - A homepage featured card skips the index. That verifies `writing-detail`, not `writing-filter`.

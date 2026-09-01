@@ -71,6 +71,7 @@ control-resume browser click --role link --name "Musings"
 control-resume browser click --role button --name "All"
 control-resume browser click --selector '.writing-library-card'
 control-resume browser text --selector h1
+control-resume browser pause --ms 2000
 control-resume browser wait --selector '.article-back'
 control-resume browser snapshot --aria --path .cursor/skills/verify-resume/evidence/<id>/result.aria.txt
 control-resume browser screenshot --path .cursor/skills/verify-resume/evidence/<id>/result.png
