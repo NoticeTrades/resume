@@ -1,6 +1,6 @@
 # Cursor Project Context — Nicholas Thomas Portfolio
 
-Last verified: August 25, 2026
+Last verified: September 1, 2026
 
 Read this file before making changes. It summarizes the current architecture, working features, content workflow, and important implementation decisions.
 
@@ -124,6 +124,8 @@ The anchored sections deliberately do not carry `reveal-on-scroll` themselves; t
 - `/library` queries all published `learningResource` documents
 - Responsive cards display covers, titles, creators, resource types, categories, status, progress, and ratings where available
 - Lightweight filters: All, Books, Courses, Certifications, Currently Learning, and Completed
+- A **Currently learning CMA** callout sits above the shelf. It selects a published resource whose status is `Currently Learning` and whose title, type, category, tags, or author/creator mentions CMA, Gleim, or Certified Management Accountant. No extra CMS field is required.
+- If no matching resource is published, the callout shows an empty state that points at [Sanity Studio](https://bynickthomas.sanity.studio/). The frontend does not hardcode a Gleim resource.
 - `/library/[slug]` displays the full resource, personal thoughts, key takeaways, progress, rating, external link, and related notes
 - Related notes are derived by querying Learning Notes that reference the resource
 
