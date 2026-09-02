@@ -481,8 +481,8 @@ a {
   position: absolute;
   inset: 9% 6% 4%;
   border-radius: 46% 46% 16% 16%;
-  background: rgba(89, 241, 215, 0.07);
-  filter: blur(46px);
+  background: rgba(89, 241, 215, 0.045);
+  filter: blur(52px);
   transition: background 0.35s ease;
 }
 
