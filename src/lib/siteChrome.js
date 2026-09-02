@@ -17,6 +17,7 @@ export function renderInteriorHeader(activePath) {
           ${navLink("/writing/", "Musings", activePath)}
           ${navLink("/library/", "Library", activePath)}
           ${navLink("/notes/", "TIL", activePath)}
+          ${navLink("/study/", "Study", activePath)}
         </nav>
       </div>
       <div class="social-icons writing-socials" aria-label="Social links">
