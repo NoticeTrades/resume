@@ -103,6 +103,7 @@ app.innerHTML = `
         <a href="/writing/">Musings</a>
         <a href="/library/">Library</a>
         <a href="/notes/">TIL</a>
+        <a href="/study/">Study</a>
       </nav>
     </div>
     <div class="market-strip" aria-label="Futures market prices">

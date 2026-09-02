@@ -72,6 +72,7 @@ export default defineConfig({
         writing: "writing/index.html",
         library: "library/index.html",
         notes: "notes/index.html",
+        study: "study/index.html",
       },
     },
   },

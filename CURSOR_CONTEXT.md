@@ -1,6 +1,6 @@
 # Cursor Project Context — Nicholas Thomas Portfolio
 
-Last verified: September 1, 2026
+Last verified: September 2, 2026
 
 Read this file before making changes. It summarizes the current architecture, working features, content workflow, and important implementation decisions.
 
@@ -57,9 +57,10 @@ Always run the public production build after frontend changes. Run the Studio bu
 | `/library/[slug]` | Individual Learning Resource | `library/index.html`, `src/library.js` |
 | `/notes` | Today I Learned index | `notes/index.html`, `src/notes.js` |
 | `/notes/[slug]` | Individual Learning Note | `notes/index.html`, `src/notes.js` |
+| `/study` | Retrieval-practice drill for published Learning Notes | `study/index.html`, `src/study.js` |
 | `/api/market-data` | Vercel serverless Yahoo Finance proxy | `api/market-data.js` |
 
-Vite uses `vite.config.js` to build four HTML entry points. During local development it rewrites clean Library and Notes detail URLs to their index pages with a `slug` query parameter. `vercel.json` provides equivalent production rewrites. Keep both routing implementations aligned if these routes change.
+Vite uses `vite.config.js` to build five HTML entry points. During local development it rewrites clean Library and Notes detail URLs to their index pages with a `slug` query parameter. `vercel.json` provides equivalent production rewrites. Keep both routing implementations aligned if these routes change. `/study` is a single index route and does not need a slug rewrite.
 
 ## Current working features
 
@@ -117,7 +118,7 @@ The anchored sections deliberately do not carry `reveal-on-scroll` themselves; t
 - Article detail views use their slug
 - Portable Text, images, links, and uploaded Sanity videos are supported
 - Featured articles are also used on the homepage
-- The shared header includes Home, About, Musings, Library, TIL, YouTube, email, and the Pokeball interaction
+- The shared header includes Home, About, Musings, Library, TIL, Study, YouTube, email, and the Pokeball interaction
 
 ### Learning Library
 
@@ -135,6 +136,10 @@ The anchored sections deliberately do not carry `reveal-on-scroll` themselves; t
 - Previews display title, date, category, calculated or manually supplied read time, excerpt, and related resource when present
 - `/notes/[slug]` displays the note body, metadata, tags, and an optional **Learning From** link back to its resource
 - Notes are intentionally lightweight and do not require hero images, SEO descriptions, or complex article fields
+
+### Study
+
+`/study` is a retrieval-practice drill over published `learningNote` documents loaded with the existing `loadLearningNotes()` helper. It never invents cards, never writes to Sanity, and never copies exam-bank questions. One due note is shown at a time with the body hidden until **Reveal**; after recall the Portable Text body appears with **Again**, **Hard**, and **Got it**. A namespaced `resume-study-v1` localStorage schedule uses a small SM-2-lite ladder (Again ≈ 10 minutes; Got it grows 1d / 3d / 7d / 14d). Due notes come first, with a preference for notes whose related Library resource is actually CMA/Gleim when such a resource exists; if nothing is due, the page says so and offers the remaining unscheduled notes or a stop. Zero published notes links to Studio. Session meta shows how many are due today and suggests stopping after 20 reveals or 30 minutes without locking the UI. Space/Enter reveals; 1/J, 2/K, and 3/H rate.
 
 ## Sanity content model
 
@@ -202,6 +207,7 @@ These are configured in Sanity Manage under the project's API settings, not in t
 ## Shared frontend modules
 
 - `src/lib/siteChrome.js`: shared interior-page header, footer, navigation, social links, and Pokeball markup
+- `src/lib/studySchedule.js`: local-only SM-2-lite queue and `resume-study-v1` persistence for `/study`
 - `src/lib/puzzlePortrait.js`: homepage jigsaw portrait engine, exposing `disturb()`, `scatterFrom()`, `resume()`, and `pause()`
 - `src/lib/pokemonRelease.js`: reusable Pokemon release and drag behavior for interior pages
 - `src/lib/pageUi.js`: shared scroll reveal initialization and safe slug extraction
@@ -251,7 +257,7 @@ After relevant changes:
 
 1. Run `npm run build` from the repository root.
 2. If schemas changed, run `npm run build` from `studio/`.
-3. Test `/`, `/writing`, `/library`, and `/notes` at desktop and mobile widths.
+3. Test `/`, `/writing`, `/library`, `/notes`, and `/study` at desktop and mobile widths.
 4. Test one real detail route for each content type when published content is available.
 5. Test a nonexistent `/library/[slug]` and `/notes/[slug]` route.
 6. Confirm `/api/market-data` returns JSON and that the homepage fallback remains usable when it fails.
