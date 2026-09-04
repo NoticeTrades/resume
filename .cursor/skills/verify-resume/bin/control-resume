@@ -557,7 +557,7 @@ async function cmdBrowser(flags) {
     const name = flags.name;
     const selector = flags.selector;
     if (!selector && !(role && name)) {
-      die('Usage: control-resume browser click --role link --name "Musings"  OR  --selector "[data-filter=\\"All\\"]"');
+      die('Usage: control-resume browser click --role link --name "Musings"  OR  --selector ".index-row"');
     }
     await withPage(async (cdp) => {
       const result = await evaluate(
@@ -628,7 +628,7 @@ async function cmdBrowser(flags) {
 
   if (action === "wait") {
     const selector = flags.selector || flags._[1];
-    if (!selector) die("Usage: control-resume browser wait --selector .writing-card");
+    if (!selector) die("Usage: control-resume browser wait --selector .index-row");
     await withPage(async (cdp) => {
       await waitForApp(cdp, selector);
       process.stdout.write(`ok wait ${selector}\n`);
@@ -670,10 +670,10 @@ function usage() {
   http [--method GET] --path /writing/ [--out file] [--quiet]
   browser goto --path /
   browser click --role link --name "Musings"
-  browser click --selector "[data-filter=\\"Philosophy\\"]"
+  browser click --selector ".index-row"
   browser text --selector h1
   browser pause --ms 2000
-  browser wait --selector .writing-card
+  browser wait --selector .index-row
   browser eval --js "document.title"
   browser snapshot --aria --path evidence/page.aria.txt
   browser screenshot --path evidence/page.png

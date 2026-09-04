@@ -68,11 +68,11 @@ Use `control-resume` from this skill. There is no Playwright or Cypress suite in
 ```bash
 control-resume browser goto --path /
 control-resume browser click --role link --name "Musings"
-control-resume browser click --role button --name "All"
-control-resume browser click --selector '.writing-library-card'
+control-resume browser wait --selector '.index-row, .index-empty'
+control-resume browser click --selector '.index-row'
 control-resume browser text --selector h1
 control-resume browser pause --ms 2000
-control-resume browser wait --selector '.article-back'
+control-resume browser wait --selector '.article-back, .detail-back'
 control-resume browser snapshot --aria --path .cursor/skills/verify-resume/evidence/<id>/result.aria.txt
 control-resume browser screenshot --path .cursor/skills/verify-resume/evidence/<id>/result.png
 control-resume http --path /api/market-data --out .cursor/skills/verify-resume/evidence/<id>/market-data.json --quiet
@@ -88,6 +88,8 @@ Stable handles from this codebase (use these, not coordinates):
 | link name `Musings` | `/writing/` |
 | link name `Library` | `/library/` |
 | link name `TIL` | `/notes/` |
+| link name `all musings` | Homepage CTA to `/writing/` |
+| link name `all notes` | Homepage CTA to `/notes/` |
 | homepage wordmark `#reloadSite` | Button that reloads `/` |
 | interior wordmark `.wordmark` | Link to `/` named `Nicholas Thomas` |
 | `h1[aria-label="Hello, Nick Here."]` | Homepage typed headline |
@@ -97,15 +99,15 @@ Stable handles from this codebase (use these, not coordinates):
 | `[aria-label="Futures market prices"]` | Homepage ticker |
 | `.ticker-status` | `Yahoo delayed` or `feed offline` |
 | `/writing/?article=<slug>` | Musing detail |
-| `[data-filter="<Category>"]` | Writing category buttons. First is `All` |
-| `.writing-library-card` | Musing cards on `/writing/` |
-| `.article-back` | `← All musings` |
-| `[data-resource-filter="all"]` and `type:Book`, `type:Course`, `type:Certification`, `status:Currently Learning`, `status:Completed` | Library filters |
-| `.resource-card` | Library cards. `href="/library/<slug>"` |
+| `.index-row` | Title-and-date (or title-and-cover) rows on `/writing/`, `/library/`, and `/notes/` |
+| `.index-empty` | Empty index copy |
+| `.index-featured` / `#cmaStudyTitle` | Library currently-learning CMA callout |
+| `.article-back` | `← All musings` on a musing detail |
 | `[role="progressbar"][aria-label="Learning progress"]` | Resource progress |
-| `.note-card` | TIL cards. `href="/notes/<slug>"` |
+| `.highlights-row` | Homepage musing and TIL highlight rows |
+| `.highlights-empty` | Homepage empty highlight copy |
 | `.detail-back` | `← Learning Library` or `← Today I Learned` |
-| `[role="status"]` | Transient `Opening the library…` / `Opening the notebook…` |
+| `.learning-from` | Optional note-to-resource link |
 
 Read the feature file for the path you are proving. Drive every entry point it lists, or report the skipped entry with the unmet precondition. One convenient path is not coverage of the others.
 
@@ -117,15 +119,14 @@ Minimum for a pass:
 
 - Action artifact: screenshot or ARIA dump taken at the moment of the user action.
 - Result artifact: screenshot and ARIA dump of the resulting screen.
-- Side-effect check that matches the feature: URL change, visible heading, filter `aria-pressed`, ticker status plus `/api/market-data` body, or 404 copy.
+- Side-effect check that matches the feature: URL change, visible heading, ticker status plus `/api/market-data` body, or 404 copy.
 - Record the feature ID and entry point in the artifact filenames or a `report.txt` beside them.
 
 Proof standards:
 
-- Use the real header links, cards, and filter buttons. Do not set `location` in eval to skip navigation unless the feature file says that URL is itself an entry point.
+- Use the real header links, highlight rows, and index rows. Do not set `location` in eval to skip navigation unless the feature file says that URL is itself an entry point.
 - `#app` HTML from `curl` is the empty shell. It is not UI proof.
-- Writing may show live Sanity articles or the three local sample musings. Either is a valid index. Sample details include an aside `Sample layout`.
-- Library and TIL may be empty. Empty copy is a valid result. Do not invent documents.
+- Writing, Library, and TIL may be empty. Empty copy is a valid result. Do not invent documents. There are no local sample musings.
 - Market ticker: `Yahoo delayed` (or another live `payload.status`) means the proxy answered. `feed offline` plus demo NQ/ES/YM/RTY prices means the UI fell back. Confirm with the `/api/market-data` body. Do not mock Yahoo inside the page.
 - Pokemon name is random. Proof is `#pokemonWalker` gaining `is-released` and `#pokemonSprite` getting a non-empty `alt`.
 - Puzzle proof is the click on the named portrait button plus a screenshot of the hero. Do not call `puzzlePortrait.disturb()` from eval.

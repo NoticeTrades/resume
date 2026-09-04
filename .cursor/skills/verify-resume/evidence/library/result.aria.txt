@@ -1,5 +1,5 @@
-title: Nick's Musings | Nicholas Thomas
-url: http://127.0.0.1:5173/writing/?article=this-slug-does-not-exist-verify
+title: Learning Library | Nicholas Thomas
+url: http://127.0.0.1:5173/library/
 
 link: Nicholas Thomas
 navigation: Main navigation
@@ -13,5 +13,6 @@ link: YouTube
 link: X
 link: Email Nicholas Thomas
 button: Release a random Pokemon
-heading h1: musings
-link: all musings
+heading h1: library
+link: The Machine Stops E.M. Forster Completed
+link: Thinking, Fast and Slow Daniel Kahneman Completed
