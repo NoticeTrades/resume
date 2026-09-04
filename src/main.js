@@ -1,6 +1,5 @@
 ﻿import "./style.css";
 import "./writing.css";
-import { articles } from "./content/articles.js";
 import { initializeIndexPointer, initializeNavPrefetch, readCache, writeCache } from "./lib/pageData.js";
 import { initializePokemonRelease } from "./lib/pokemonRelease.js";
 import { createPuzzlePortrait } from "./lib/puzzlePortrait.js";
@@ -58,9 +57,9 @@ function renderHomeRows(items, hrefFor) {
   `;
 }
 
-const cachedArticles = readCache("articles");
+const cachedArticles = (readCache("articles") ?? []).filter((article) => article && !article.sample);
 const featuredWritingCards = renderHomeRows(
-  selectHighlights(cachedArticles?.length ? cachedArticles : articles),
+  selectHighlights(cachedArticles),
   (article) => `/writing/?article=${encodeURIComponent(article.slug)}`
 );
 const cachedNotes = readCache("notes");
@@ -264,7 +263,6 @@ initializeIndexPointer();
 
 loadPublishedArticles()
   .then((publishedArticles) => {
-    if (!publishedArticles.length) return;
     writeCache("articles", publishedArticles);
     fillHomeList(
       "featuredWritingGrid",
@@ -272,7 +270,9 @@ loadPublishedArticles()
     );
   })
   .catch(() => {
-    // Keep the local sample articles visible until Sanity is configured and published.
+    if (!cachedArticles.length) {
+      fillHomeList("featuredWritingGrid", renderHomeRows([], () => "/writing/"));
+    }
   });
 
 loadLearningNotes()

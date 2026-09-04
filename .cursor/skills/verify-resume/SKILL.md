@@ -33,7 +33,7 @@ Default env (no `.env` required):
 - `VITE_SANITY_DATASET` defaults to `production`
 - `VITE_MARKET_DATA_ENDPOINT` defaults to `/api/market-data`
 
-No login. No local seed database. Writing falls back to sample articles in `src/content/articles.js` when Sanity is empty or unreachable. Library and TIL show empty or 404 copy when Sanity has no published documents.
+No login. No local seed database. Musings, Library, and TIL show empty or 404 copy when Sanity has no published documents.
 
 Teardown: `control-resume stop`. That kills only the PIDs recorded in `$RESUME_VERIFY_DIR/instance.json`.
 

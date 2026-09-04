@@ -135,7 +135,7 @@ Sanity CORS must allow local Vite origins and production domains. See `README.md
 2. Create/publish **Article**, **Learning Resource**, or **Learning Note**
 3. Site reads **published** documents only — drafts stay invisible
 
-Homepage Musings stay on sample articles until real articles are published in Sanity.
+Musings and homepage article highlights stay empty until real articles are published in Sanity. Do not add sample/placeholder articles.
 
 ---
 

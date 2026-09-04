@@ -197,7 +197,7 @@ https://www.bynickthomas.com
 https://bynickthomas.com
 ```
 
-These are configured in Sanity Manage under the project's API settings, not in this repository. If a localhost origin is missing, Sanity answers local dev requests with `403 Forbidden`, the browser reports a CORS error, and the homepage keeps showing the sample articles from `src/content/articles.js` while the Learning Note sections fall back to their empty states. Production is unaffected. Vite picks the next free port when 5173 is taken, so allow the ports actually used locally.
+These are configured in Sanity Manage under the project's API settings, not in this repository. If a localhost origin is missing, Sanity answers local dev requests with `403 Forbidden`, the browser reports a CORS error, and Musings / homepage article highlights fall back to empty states until CORS is fixed. Production is unaffected. Vite picks the next free port when 5173 is taken, so allow the ports actually used locally.
 
 ## Shared frontend modules
 

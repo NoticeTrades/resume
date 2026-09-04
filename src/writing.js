@@ -1,6 +1,5 @@
 import "./style.css";
 import "./writing.css";
-import { articles } from "./content/articles.js";
 import { escapeHtml, loadPublishedArticles, recordPageView } from "./lib/sanity.js";
 import { readCache, sameSlugList, writeCache } from "./lib/pageData.js";
 import { initializeRevealAnimations } from "./lib/pageUi.js";
@@ -12,9 +11,13 @@ import {
 
 const app = document.querySelector("#app");
 const params = new URLSearchParams(window.location.search);
-let writingArticles = articles;
+let writingArticles = [];
 let cleanupPokemonRelease = () => {};
 let cleanupReveals = () => {};
+
+function realArticles(source) {
+  return (source ?? []).filter((article) => article && !article.sample);
+}
 
 function articleDateTime(article) {
   if (!article.publishedAt) return "";
@@ -67,15 +70,19 @@ function renderArticle(article) {
         <div class="article-body">
           ${bodyHtml}
         </div>
-        ${
-          article.sample
-            ? `<aside class="article-placeholder-note">
-                <strong>Sample layout</strong>
-                <p>This entry is temporary and will be replaced when your Sanity publishing workflow is connected.</p>
-              </aside>`
-            : ""
-        }
       </article>
+    </main>
+  `;
+}
+
+function renderNotFound() {
+  return `
+    <main class="index-page">
+      <header class="index-intro index-enter">
+        <h1>musings</h1>
+        <p>this article could not be found. it may have been unpublished or moved.</p>
+        <p class="index-empty"><a href="/writing/">all musings</a></p>
+      </header>
     </main>
   `;
 }
@@ -83,31 +90,42 @@ function renderArticle(article) {
 function renderWritingPage() {
   cleanupPokemonRelease();
   cleanupReveals();
-  const selectedArticle = writingArticles.find((article) => article.slug === params.get("article"));
+  const selectedSlug = params.get("article");
+  const selectedArticle = selectedSlug
+    ? writingArticles.find((article) => article.slug === selectedSlug)
+    : null;
+  const content = selectedSlug
+    ? selectedArticle
+      ? renderArticle(selectedArticle)
+      : renderNotFound()
+    : renderLibrary();
+
   app.innerHTML = `
     ${renderInteriorHeader("/writing/")}
-    ${selectedArticle ? renderArticle(selectedArticle) : renderLibrary()}
+    ${content}
     ${renderSiteFooter()}
   `;
   cleanupPokemonRelease = initializeInteriorChrome();
   cleanupReveals = initializeRevealAnimations(app);
-  if (selectedArticle && !selectedArticle.sample) recordPageView("article", selectedArticle.slug);
+  if (selectedArticle) recordPageView("article", selectedArticle.slug);
 }
 
 async function initializeWriting() {
-  const cached = readCache("articles");
-  if (cached?.length) writingArticles = cached;
+  const cached = realArticles(readCache("articles"));
+  if (cached.length) writingArticles = cached;
   renderWritingPage();
 
   try {
     const publishedArticles = await loadPublishedArticles();
-    if (!publishedArticles.length) return;
     writeCache("articles", publishedArticles);
-    if (sameSlugList(writingArticles, publishedArticles) && cached?.length) return;
+    if (sameSlugList(writingArticles, publishedArticles) && cached.length) return;
     writingArticles = publishedArticles;
     renderWritingPage();
   } catch {
-    // Sample articles stay available if Sanity is empty or unreachable.
+    if (!cached.length) {
+      writingArticles = [];
+      renderWritingPage();
+    }
   }
 }
 
