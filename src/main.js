@@ -1,10 +1,13 @@
-import "./style.css";
+﻿import "./style.css";
+import "./writing.css";
 import { articles } from "./content/articles.js";
+import { initializeIndexPointer, initializeNavPrefetch, readCache, writeCache } from "./lib/pageData.js";
+import { initializePokemonRelease } from "./lib/pokemonRelease.js";
 import { createPuzzlePortrait } from "./lib/puzzlePortrait.js";
 import { syncHeaderOffset } from "./lib/pageUi.js";
 import {
   escapeHtml,
-  loadLatestLearningNote,
+  loadLearningNotes,
   loadPublishedArticles,
 } from "./lib/sanity.js";
 
@@ -23,87 +26,59 @@ const demoQuotes = [
 ];
 
 const app = document.querySelector("#app");
-function selectFeaturedWriting(source) {
-  const manuallyFeatured = source.filter((article) => article.featured);
-  const remaining = source.filter((article) => !article.featured);
-  return [...manuallyFeatured, ...remaining].slice(0, 3);
+function selectHighlights(source) {
+  return [...source]
+    .sort((left, right) => {
+      const views = (Number(right.views) || 0) - (Number(left.views) || 0);
+      if (views) return views;
+      if (Boolean(right.featured) !== Boolean(left.featured)) return right.featured ? 1 : -1;
+      return new Date(right.publishedAt || 0) - new Date(left.publishedAt || 0);
+    })
+    .slice(0, 3);
 }
 
-function renderFeaturedWritingCards(source) {
-  if (!source.length) {
-    return `
-      <div class="writing-empty-state reveal-on-scroll">
-        <span aria-hidden="true">✦</span>
-        <h3>New musings are taking shape.</h3>
-        <p>Fresh thoughts, observations, and ideas will appear here soon.</p>
-      </div>
-    `;
-  }
-
-  return selectFeaturedWriting(source)
-  .map(
-    (article, index) => `
-      <a
-        class="writing-card reveal-on-scroll ${index === 0 ? "is-featured" : ""}"
-        href="/writing/?article=${encodeURIComponent(article.slug)}"
-        style="--reveal-delay: ${index * 90}ms"
-      >
-        <div class="writing-card-copy">
-          <div class="writing-card-topline">
-            <span class="writing-category">${escapeHtml(article.category)}</span>
-            <span class="writing-card-mark" aria-hidden="true">✦</span>
-          </div>
-          <h3>${escapeHtml(article.title)}</h3>
-          <p>${escapeHtml(article.excerpt)}</p>
-          <span class="writing-meta">${escapeHtml(article.displayDate)} · ${escapeHtml(article.readTime)}</span>
-          <span class="writing-card-cta">Read musing <span aria-hidden="true">↗</span></span>
-        </div>
-      </a>
-    `
-  )
-  .join("");
-}
-
-function renderLatestLearningNote(note) {
-  if (!note) {
-    return `
-      <div class="til-home-empty">
-        <span aria-hidden="true">✦</span>
-        <p>New learning notes will appear here as I publish them.</p>
-      </div>
-    `;
-  }
+function renderHomeRows(items, hrefFor) {
+  if (!items.length) return `<p class="highlights-empty reveal-on-scroll">Nothing published yet.</p>`;
 
   return `
-    <a class="til-home-card" href="/notes/${encodeURIComponent(note.slug)}">
-      <div class="til-home-topline">
-        <span class="writing-category">${escapeHtml(note.category)}</span>
-        <span class="writing-meta">${escapeHtml(note.displayDate)}</span>
-      </div>
-      <h3>${escapeHtml(note.title)}</h3>
-      <p>${escapeHtml(note.excerpt)}</p>
-      <div class="til-home-footer">
-        <span>${escapeHtml(note.readTimeLabel)}</span>
-        ${note.relatedResource ? `<span>From ${escapeHtml(note.relatedResource.title)}</span>` : ""}
-        <strong>Read note ↗</strong>
-      </div>
-    </a>
+    <ul class="highlights-list">
+      ${items
+        .map(
+          (item, index) => `
+            <li>
+              <a class="highlights-row reveal-on-scroll" href="${hrefFor(item)}" style="--reveal-delay: ${90 + index * 90}ms">
+                <span class="highlights-row-title">${escapeHtml(item.title)}</span>
+                <time class="highlights-row-meta">${escapeHtml(item.displayDate)}</time>
+              </a>
+            </li>
+          `
+        )
+        .join("")}
+    </ul>
   `;
 }
 
-const featuredWritingCards = renderFeaturedWritingCards(articles);
+const cachedArticles = readCache("articles");
+const featuredWritingCards = renderHomeRows(
+  selectHighlights(cachedArticles?.length ? cachedArticles : articles),
+  (article) => `/writing/?article=${encodeURIComponent(article.slug)}`
+);
+const cachedNotes = readCache("notes");
+const featuredNotes = renderHomeRows(
+  selectHighlights(cachedNotes ?? []),
+  (note) => `/notes/${encodeURIComponent(note.slug)}`
+);
 
 app.innerHTML = `
   <header class="site-header">
     <div class="header-left">
       <button class="wordmark" type="button" id="reloadSite">Nicholas Thomas</button>
       <nav aria-label="Main navigation">
-        <a href="#home">Home</a>
+        <a href="#home" aria-current="page">Home</a>
         <a href="#about">About</a>
         <a href="/writing/">Musings</a>
         <a href="/library/">Library</a>
         <a href="/notes/">TIL</a>
-        <a href="/study/">Study</a>
       </nav>
     </div>
     <div class="market-strip" aria-label="Futures market prices">
@@ -200,40 +175,24 @@ app.innerHTML = `
       </div>
     </section>
 
-    <section class="til-home-section" id="til">
-      <div class="section-heading til-home-heading reveal-on-scroll">
-        <div>
-          <p class="section-kicker">a small idea worth keeping</p>
-          <h2>Today I Learned</h2>
-        </div>
+    <section class="highlights-section" id="til">
+      <div class="section-heading reveal-on-scroll">
+        <h2>today i learned</h2>
         <span></span>
       </div>
-      <div id="latestLearningNote" class="reveal-on-scroll">
-        <div class="til-home-empty"><span aria-hidden="true">✦</span><p>Opening the notebook…</p></div>
-      </div>
-      <a class="view-writing-action reveal-on-scroll" href="/notes/">
-        View all notes <span aria-hidden="true">→</span>
-      </a>
+      <p class="highlights-label reveal-on-scroll">highlights</p>
+      <div id="latestLearningNote">${featuredNotes}</div>
+      <a class="highlights-more reveal-on-scroll" href="/notes/">all notes</a>
     </section>
 
-    <section class="writing-section" id="writing">
-      <div class="section-heading writing-heading reveal-on-scroll">
-        <div>
-          <p class="section-kicker">thoughts, observations & ideas</p>
-          <h2>Nick's Musings</h2>
-        </div>
+    <section class="highlights-section" id="writing">
+      <div class="section-heading reveal-on-scroll">
+        <h2>musings</h2>
         <span></span>
       </div>
-      <p class="writing-intro reveal-on-scroll">
-        A place for whatever has my attention: markets, philosophy, technology,
-        books, useful tools, personal observations, and life as it unfolds.
-      </p>
-      <div class="writing-grid" id="featuredWritingGrid">
-        ${featuredWritingCards}
-      </div>
-      <a class="view-writing-action reveal-on-scroll" href="/writing/">
-        Explore all musings <span aria-hidden="true">→</span>
-      </a>
+      <p class="highlights-label reveal-on-scroll">highlights</p>
+      <div id="featuredWritingGrid">${featuredWritingCards}</div>
+      <a class="highlights-more reveal-on-scroll" href="/writing/">all musings</a>
     </section>
   </main>
 
@@ -250,9 +209,6 @@ document.getElementById("reloadSite").addEventListener("click", () => {
 });
 
 const hero = document.querySelector(".hero");
-const pokeballRelease = document.getElementById("pokeballRelease");
-const pokemonWalker = document.getElementById("pokemonWalker");
-const pokemonSprite = document.getElementById("pokemonSprite");
 const portraitShell = document.querySelector(".portrait-shell");
 const puzzlePortrait = createPuzzlePortrait({
   hero,
@@ -296,197 +252,48 @@ const focusObserver = new IntersectionObserver(
 
 focusObserver.observe(focusList);
 
+function fillHomeList(id, html) {
+  const mount = document.getElementById(id);
+  if (!mount) return;
+  mount.innerHTML = html;
+  mount.querySelectorAll(".reveal-on-scroll").forEach((item) => revealObserver.observe(item));
+}
+
+initializeNavPrefetch();
+initializeIndexPointer();
+
 loadPublishedArticles()
   .then((publishedArticles) => {
-    const writingGrid = document.getElementById("featuredWritingGrid");
-    writingGrid.innerHTML = renderFeaturedWritingCards(publishedArticles);
-    writingGrid.querySelectorAll(".reveal-on-scroll").forEach((item) => revealObserver.observe(item));
+    if (!publishedArticles.length) return;
+    writeCache("articles", publishedArticles);
+    fillHomeList(
+      "featuredWritingGrid",
+      renderHomeRows(selectHighlights(publishedArticles), (article) => `/writing/?article=${encodeURIComponent(article.slug)}`)
+    );
   })
   .catch(() => {
     // Keep the local sample articles visible until Sanity is configured and published.
   });
 
-loadLatestLearningNote()
-  .then((note) => {
-    const latestNote = document.getElementById("latestLearningNote");
-    latestNote.innerHTML = renderLatestLearningNote(note);
+loadLearningNotes()
+  .then((notes) => {
+    writeCache("notes", notes);
+    fillHomeList(
+      "latestLearningNote",
+      renderHomeRows(selectHighlights(notes), (note) => `/notes/${encodeURIComponent(note.slug)}`)
+    );
   })
   .catch(() => {
-    const latestNote = document.getElementById("latestLearningNote");
-    latestNote.innerHTML = renderLatestLearningNote(null);
+    if (!cachedNotes?.length) fillHomeList("latestLearningNote", renderHomeRows([], () => "/notes/"));
   });
 
-const pokemonOptions = [
-  { name: "Bulbasaur", src: "/pokemon/bulbasaur.webp", size: "sm" },
-  { name: "Shinx", src: "/pokemon/shinx.webp", size: "sm" },
-  { name: "Flareon", src: "/pokemon/flareon.webp", size: "lg" },
-  { name: "Gengar", src: "/pokemon/gengar.webp", size: "md" },
-  { name: "Pikachu", src: "/pokemon/pikachu.webp", size: "md" },
-  { name: "Blastoise", src: "/pokemon/blastoise.webp", size: "lg" },
-  { name: "Dragonite", src: "/pokemon/dragonite.webp", size: "sm" },
-  { name: "Mewtwo", src: "/pokemon/mewtwo.webp", size: "md" },
-  { name: "Charizard", src: "/pokemon/charizard.webp", size: "lg" },
-  { name: "Giratina", src: "/pokemon/giratina.webp", size: "lg" },
-];
-
-const walker = {
-  released: false,
-  x: window.innerWidth - 150,
-  y: 120,
-  vx: 1.45,
-  vy: 1.05,
-  facing: 1,
-  frameId: null,
-  lastTime: 0,
-  pointerX: 0,
-  pointerY: 0,
-  pointerActive: false,
-  dragging: false,
-  dragOffsetX: 0,
-  dragOffsetY: 0,
-  dragLastX: 0,
-  dragLastY: 0,
-  dragLastTime: 0,
-};
-
-function pickPokemon() {
-  return pokemonOptions[Math.floor(Math.random() * pokemonOptions.length)];
+function getOverlap(a, b) {
+  const x = Math.min(a.right, b.right) - Math.max(a.left, b.left);
+  const y = Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top);
+  return x > 0 && y > 0 ? { x, y } : null;
 }
 
-function setReleasedPokemon(pokemon) {
-  pokemonSprite.src = pokemon.src;
-  pokemonSprite.alt = pokemon.name;
-  pokemonWalker.dataset.size = pokemon.size;
-  pokemonWalker.classList.remove("is-popping");
-  requestAnimationFrame(() => pokemonWalker.classList.add("is-popping"));
-}
-
-function releasePokemon() {
-  setReleasedPokemon(pickPokemon());
-  pokeballRelease.classList.add("is-open");
-  window.setTimeout(() => pokeballRelease.classList.remove("is-open"), 700);
-
-  if (walker.released) {
-    launchWalker();
-    return;
-  }
-
-  const ballRect = pokeballRelease.getBoundingClientRect();
-  walker.x = ballRect.left - 40;
-  walker.y = ballRect.bottom + 8;
-  walker.released = true;
-  pokemonWalker.classList.add("is-released");
-  launchWalker();
-  setWalkerPosition();
-  walker.frameId = requestAnimationFrame(animateWalker);
-}
-
-function launchWalker() {
-  const angle = Math.random() * Math.PI * 2;
-  const speed = 1.45 + Math.random() * 0.85;
-  walker.vx = Math.cos(angle) * speed || 1.4;
-  walker.vy = Math.sin(angle) * speed || 1;
-  walker.facing = walker.vx >= 0 ? 1 : -1;
-}
-
-function animateWalker(time) {
-  if (!walker.released || document.hidden) {
-    walker.frameId = 0;
-    return;
-  }
-
-  const dt = Math.min(2.2, Math.max(0.75, (time - (walker.lastTime || time)) / 16.67));
-  walker.lastTime = time;
-
-  if (!walker.dragging) {
-    applyCursorPush();
-    walker.x += walker.vx * dt;
-    walker.y += walker.vy * dt;
-    handleWalkerCollisions();
-  } else {
-    disturbPortraitOnWalkerOverlap(getWalkerBounds());
-  }
-
-  walker.facing = walker.vx >= 0 ? 1 : -1;
-  setWalkerPosition();
-  walker.frameId = requestAnimationFrame(animateWalker);
-}
-
-function applyCursorPush() {
-  if (!walker.pointerActive) return;
-
-  const bounds = getWalkerBounds();
-  const centerX = bounds.left + bounds.width / 2;
-  const centerY = bounds.top + bounds.height / 2;
-  const dx = centerX - walker.pointerX;
-  const dy = centerY - walker.pointerY;
-  const distance = Math.hypot(dx, dy);
-  const radius = 132;
-
-  if (distance >= radius || distance < 1) return;
-
-  const falloff = (1 - distance / radius) ** 2;
-  const force = 0.38 + falloff * 1.18;
-  walker.vx += (dx / distance) * force;
-  walker.vy += (dy / distance) * force;
-  normalizeWalkerSpeed(3.25);
-}
-
-function handleWalkerCollisions() {
-  const bounds = getWalkerBounds();
-  const viewportHit = clampWalkerToViewport(bounds);
-
-  if (viewportHit.x) walker.vx = Math.abs(walker.vx) * viewportHit.x;
-  if (viewportHit.y) walker.vy = Math.abs(walker.vy) * viewportHit.y;
-
-  const walkerRect = getWalkerBounds();
-  disturbPortraitOnWalkerOverlap(walkerRect);
-
-  for (const obstacle of getCollisionObstacles()) {
-    const overlap = getOverlap(walkerRect, obstacle);
-    if (!overlap) continue;
-
-    if (overlap.x < overlap.y) {
-      walker.x += walkerRect.left < obstacle.left ? -overlap.x - 2 : overlap.x + 2;
-      walker.vx *= -1;
-    } else {
-      walker.y += walkerRect.top < obstacle.top ? -overlap.y - 2 : overlap.y + 2;
-      walker.vy *= -1;
-    }
-
-    walker.vx += (Math.random() - 0.5) * 0.34;
-    walker.vy += (Math.random() - 0.5) * 0.34;
-    normalizeWalkerSpeed();
-    break;
-  }
-}
-
-function clampWalkerToViewport(bounds = getWalkerBounds()) {
-  const padding = 8;
-  const maxX = window.innerWidth - bounds.width - padding;
-  const maxY = window.innerHeight - bounds.height - padding;
-  const hit = { x: 0, y: 0 };
-
-  if (walker.x < padding) {
-    walker.x = padding;
-    hit.x = 1;
-  } else if (walker.x > maxX) {
-    walker.x = maxX;
-    hit.x = -1;
-  }
-
-  if (walker.y < 70) {
-    walker.y = 70;
-    hit.y = 1;
-  } else if (walker.y > maxY) {
-    walker.y = maxY;
-    hit.y = -1;
-  }
-
-  return hit;
-}
-
-function disturbPortraitOnWalkerOverlap(walkerRect) {
+function disturbPortraitOnWalkerOverlap(walkerRect, velocity = { vx: 0, vy: 0 }) {
   const portraitRect = portraitShell.getBoundingClientRect();
   const overlap = getOverlap(walkerRect, {
     left: portraitRect.left,
@@ -494,11 +301,10 @@ function disturbPortraitOnWalkerOverlap(walkerRect) {
     right: portraitRect.right,
     bottom: portraitRect.bottom,
   });
-
   if (!overlap) return;
 
   const heroRect = hero.getBoundingClientRect();
-  const walkerSpeed = Math.hypot(walker.vx, walker.vy);
+  const walkerSpeed = Math.hypot(velocity.vx, velocity.vy);
   puzzlePortrait.disturb(
     walkerRect.left + walkerRect.width / 2 - heroRect.left,
     walkerRect.top + walkerRect.height / 2 - heroRect.top,
@@ -507,129 +313,18 @@ function disturbPortraitOnWalkerOverlap(walkerRect) {
   );
 }
 
-function getWalkerBounds() {
-  const rect = pokemonWalker.getBoundingClientRect();
-  return {
-    left: walker.x + rect.width * 0.18,
-    top: walker.y + rect.height * 0.2,
-    right: walker.x + rect.width * 0.82,
-    bottom: walker.y + rect.height * 0.82,
-    width: rect.width * 0.64,
-    height: rect.height * 0.62,
-  };
-}
-
-function getCollisionObstacles() {
-  return Array.from(
-    document.querySelectorAll(
-      ".wordmark, .site-header nav a, .market-strip, .social-icons a, .hero-copy, .contact-action, .about-copy, .section-heading"
-    )
-  )
-    .map((target) => ({ target, rect: target.getBoundingClientRect() }))
-    .filter(({ target, rect }) => {
-      if (target === pokemonWalker || target === pokeballRelease) return false;
-      return rect.width > 0 && rect.height > 0 && rect.bottom > 0 && rect.top < window.innerHeight;
-    })
-    .map(({ target, rect }) => ({
-      target,
-      left: rect.left - 6,
-      top: rect.top - 6,
-      right: rect.right + 6,
-      bottom: rect.bottom + 6,
-    }));
-}
-
-function getOverlap(a, b) {
-  const x = Math.min(a.right, b.right) - Math.max(a.left, b.left);
-  const y = Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top);
-  return x > 0 && y > 0 ? { x, y } : null;
-}
-
-function normalizeWalkerSpeed(maxSpeed = 2.65) {
-  const speed = Math.hypot(walker.vx, walker.vy);
-  if (speed < 0.01) {
-    launchWalker();
-    return;
-  }
-  const target = Math.min(maxSpeed, Math.max(1.45, speed));
-  walker.vx = (walker.vx / speed) * target;
-  walker.vy = (walker.vy / speed) * target;
-}
-
-function setWalkerPosition() {
-  const bob = Math.sin(performance.now() / 140) * 5;
-  pokemonWalker.style.setProperty("--x", `${walker.x}px`);
-  pokemonWalker.style.setProperty("--y", `${walker.y + bob}px`);
-  pokemonWalker.style.setProperty("--facing", walker.facing);
-}
-
-pokeballRelease.addEventListener("click", releasePokemon);
-pokemonWalker.addEventListener("animationend", () => pokemonWalker.classList.remove("is-popping"));
-pokemonWalker.addEventListener("pointerenter", launchWalker);
-pokemonWalker.addEventListener("pointerdown", startPokemonDrag);
-window.addEventListener("pointermove", updatePokemonPointer);
-window.addEventListener("pointerup", endPokemonDrag);
-window.addEventListener("pointercancel", endPokemonDrag);
-
-function updatePokemonPointer(event) {
-  walker.pointerX = event.clientX;
-  walker.pointerY = event.clientY;
-  walker.pointerActive = true;
-
-  if (!walker.dragging) return;
-
-  const now = performance.now();
-  const previousX = walker.x;
-  const previousY = walker.y;
-  walker.x = event.clientX - walker.dragOffsetX;
-  walker.y = event.clientY - walker.dragOffsetY;
-  walker.vx = (walker.x - previousX) * 0.22;
-  walker.vy = (walker.y - previousY) * 0.22;
-  walker.dragLastX = event.clientX;
-  walker.dragLastY = event.clientY;
-  walker.dragLastTime = now;
-  clampWalkerToViewport();
-  setWalkerPosition();
-}
-
-function startPokemonDrag(event) {
-  if (!walker.released) return;
-
-  const rect = pokemonWalker.getBoundingClientRect();
-  walker.dragging = true;
-  walker.dragOffsetX = event.clientX - rect.left;
-  walker.dragOffsetY = event.clientY - rect.top;
-  walker.dragLastX = event.clientX;
-  walker.dragLastY = event.clientY;
-  walker.dragLastTime = performance.now();
-  pokemonWalker.classList.add("is-dragging");
-  pokemonWalker.setPointerCapture?.(event.pointerId);
-  event.preventDefault();
-}
-
-function endPokemonDrag(event) {
-  if (!walker.dragging) return;
-
-  walker.dragging = false;
-  pokemonWalker.classList.remove("is-dragging");
-  pokemonWalker.releasePointerCapture?.(event.pointerId);
-  normalizeWalkerSpeed(3.1);
-}
+initializePokemonRelease({
+  onMove(rect, velocity) {
+    disturbPortraitOnWalkerOverlap(rect, velocity);
+  },
+});
 
 function handleAnimationVisibility() {
   if (document.hidden) {
     puzzlePortrait.pause();
-    cancelAnimationFrame(walker.frameId);
-    walker.frameId = 0;
     return;
   }
-
   puzzlePortrait.resume();
-
-  if (walker.released && !walker.frameId) {
-    walker.lastTime = 0;
-    walker.frameId = requestAnimationFrame(animateWalker);
-  }
 }
 
 document.addEventListener("visibilitychange", handleAnimationVisibility);

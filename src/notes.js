@@ -6,12 +6,14 @@ import {
   escapeHtml,
   loadLearningNote,
   loadLearningNotes,
+  recordPageView,
 } from "./lib/sanity.js";
 import {
   initializeInteriorChrome,
   renderInteriorHeader,
   renderSiteFooter,
 } from "./lib/siteChrome.js";
+import { readCache, sameSlugList, writeCache } from "./lib/pageData.js";
 import { getRouteSlug, initializeRevealAnimations, setPageTitle } from "./lib/pageUi.js";
 
 const app = document.querySelector("#app");
@@ -29,49 +31,36 @@ function resourceInitials(title = "Learning") {
     .toUpperCase();
 }
 
-function renderNoteCard(note, index) {
+function noteDateTime(note) {
+  if (!note.publishedAt) return "";
+  return ` datetime="${escapeHtml(String(note.publishedAt).slice(0, 10))}"`;
+}
+
+function renderNoteRow(note, index) {
   return `
-    <a class="note-card reveal-on-scroll" href="/notes/${encodeURIComponent(note.slug)}" style="--reveal-delay: ${Math.min(index, 10) * 55}ms">
-      <div class="note-card-topline">
-        <span class="note-category">${escapeHtml(note.category)}</span>
-        <span class="note-date">${escapeHtml(note.displayDate)}</span>
-      </div>
-      <h2>${escapeHtml(note.title)}</h2>
-      <p>${escapeHtml(note.excerpt)}</p>
-      <div class="note-card-footer">
-        <span>${escapeHtml(note.readTimeLabel)}</span>
-        ${note.relatedResource ? `<span class="note-resource-link">Learning from ${escapeHtml(note.relatedResource.title)}</span>` : ""}
-        <span>Read note ↗</span>
-      </div>
-    </a>
+    <li>
+      <a class="index-row index-enter" href="/notes/${encodeURIComponent(note.slug)}" style="--stagger: ${index + 1}">
+        <span class="index-row-title">${escapeHtml(note.title)}</span>
+        <time class="index-row-meta"${noteDateTime(note)}>${escapeHtml(note.displayDate)}</time>
+      </a>
+    </li>
   `;
 }
 
-function renderNotesIndex(notes) {
+function renderNotesIndex(notes, { pending = false } = {}) {
   return `
-    <main class="learning-page">
-      <section class="learning-hero reveal-on-scroll">
-        <p class="section-kicker">small ideas worth keeping</p>
-        <h1>Today I <span>Learned</span></h1>
-        <p>
-          Short notes from books, courses, markets, technology, and everyday
-          curiosity—captured while the idea is still fresh.
-        </p>
-      </section>
-      <section aria-labelledby="notesTitle">
-        <div class="learning-toolbar reveal-on-scroll">
-          <h2 id="notesTitle">Recent notes</h2>
-          <p class="learning-count">${notes.length} ${notes.length === 1 ? "note" : "notes"}</p>
-        </div>
-        ${
-          notes.length
-            ? `<div class="note-list">${notes.map(renderNoteCard).join("")}</div>`
-            : `<div class="learning-empty reveal-on-scroll" style="margin-top: 28px">
-                <strong>The notebook is open.</strong>
-                Publish a Learning Note in Sanity and it will appear here.
-              </div>`
-        }
-      </section>
+    <main class="index-page">
+      <header class="index-intro index-enter">
+        <h1>today i learned</h1>
+        <p>short notes from books, courses, markets, and everyday curiosity.</p>
+      </header>
+      ${
+        notes.length
+          ? `<ul class="index-list">${notes.map(renderNoteRow).join("")}</ul>`
+          : pending
+            ? ""
+            : `<p class="index-empty index-enter" style="--stagger: 1">Nothing published yet.</p>`
+      }
     </main>
   `;
 }
@@ -128,13 +117,12 @@ function renderNoteDetail(note) {
 
 function renderNotFound() {
   return `
-    <main class="learning-page">
-      <section class="learning-hero reveal-on-scroll">
-        <p class="section-kicker">404 / note misplaced</p>
-        <h1>Still <span>learning.</span></h1>
-        <p>This note could not be found. It may have been unpublished or moved.</p>
-        <a class="resource-external" href="/notes/">View all notes <span aria-hidden="true">→</span></a>
-      </section>
+    <main class="index-page">
+      <header class="index-intro index-enter">
+        <h1>still learning</h1>
+        <p>this note could not be found. it may have been unpublished or moved.</p>
+        <p class="index-empty"><a href="/notes/">all notes</a></p>
+      </header>
     </main>
   `;
 }
@@ -148,18 +136,21 @@ function renderPage(content) {
 }
 
 async function initializeNotes() {
-  renderPage('<main class="learning-page"><div class="loading-state" role="status">Opening the notebook…</div></main>');
-
   try {
     if (noteSlug) {
       const note = await loadLearningNote(noteSlug);
       renderPage(renderNoteDetail(note));
+      if (note) recordPageView("note", note.slug);
       return;
     }
 
-    const notes = await loadLearningNotes();
+    const cached = readCache("notes");
     setPageTitle("Today I Learned");
-    renderPage(renderNotesIndex(notes));
+    renderPage(renderNotesIndex(cached ?? [], { pending: !cached }));
+
+    const notes = await loadLearningNotes();
+    writeCache("notes", notes);
+    if (!cached || !sameSlugList(cached, notes)) renderPage(renderNotesIndex(notes));
   } catch {
     renderPage(renderNotFound());
   }

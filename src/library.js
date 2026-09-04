@@ -13,6 +13,7 @@ import {
   renderInteriorHeader,
   renderSiteFooter,
 } from "./lib/siteChrome.js";
+import { readCache, sameSlugList, writeCache } from "./lib/pageData.js";
 import { getRouteSlug, initializeRevealAnimations, setPageTitle } from "./lib/pageUi.js";
 
 const app = document.querySelector("#app");
@@ -20,7 +21,6 @@ const resourceSlug = getRouteSlug("library");
 let cleanupChrome = () => {};
 let cleanupReveals = () => {};
 
-const STUDIO_URL = "https://bynickthomas.sanity.studio/";
 const CMA_IDENTITY_PATTERN = /\b(cma|gleim|certified management accountant)\b/i;
 
 function statusKey(status = "") {
@@ -93,104 +93,57 @@ function renderRating(rating) {
   return `<div class="resource-rating" aria-label="Rated ${escapeHtml(rating)} out of 5">★ ${escapeHtml(rating)} / 5</div>`;
 }
 
-function renderResourceCard(resource, index) {
-  const status = resource.status || "Want to Learn";
+function renderResourceRow(resource, index) {
+  const cover = resource.coverImage
+    ? `<img class="index-row-cover" src="${escapeHtml(buildSanityImageUrl(resource.coverImage, 160))}" alt="${escapeHtml(resource.coverAlt || `${resource.title} cover`)}" width="40" height="56" loading="lazy" />`
+    : `<span class="index-row-cover-fallback" aria-hidden="true">${escapeHtml(resourceInitials(resource.title))}</span>`;
+  const meta = resource.status || resource.resourceType || "";
+
   return `
-    <a
-      class="resource-card reveal-on-scroll"
-      href="/library/${encodeURIComponent(resource.slug)}"
-      data-resource-type="${escapeHtml(resource.resourceType)}"
-      data-resource-status="${escapeHtml(status)}"
-      style="--reveal-delay: ${Math.min(index, 8) * 65}ms"
-    >
-      <div class="resource-cover">
-        ${
-          resource.coverImage
-            ? `<img src="${escapeHtml(buildSanityImageUrl(resource.coverImage, 640))}" alt="${escapeHtml(resource.coverAlt || `${resource.title} cover`)}" loading="lazy" />`
-            : `<div class="resource-cover-placeholder" aria-hidden="true">${escapeHtml(resourceInitials(resource.title))}</div>`
-        }
-        <span class="resource-type-badge">${escapeHtml(resource.resourceType)}</span>
-      </div>
-      <div class="resource-card-body">
-        <div class="resource-card-topline">
-          <span class="resource-category">${escapeHtml(resource.category)}</span>
-          <span class="learning-status" data-status="${statusKey(status)}">${escapeHtml(status)}</span>
-        </div>
-        <h2>${escapeHtml(resource.title)}</h2>
-        <p class="resource-creator">${escapeHtml(resource.authorCreator || "Independent resource")}</p>
-        ${renderProgress(resource)}
-        ${renderRating(resource.rating)}
-      </div>
-    </a>
+    <li>
+      <a class="index-row index-row-book index-enter" href="/library/${encodeURIComponent(resource.slug)}" style="--stagger: ${index + 1}">
+        ${cover}
+        <span class="index-row-copy">
+          <span class="index-row-title">${escapeHtml(resource.title)}</span>
+          ${resource.authorCreator ? `<span class="index-row-sub">${escapeHtml(resource.authorCreator)}</span>` : ""}
+        </span>
+        <span class="index-row-meta">${escapeHtml(meta)}</span>
+      </a>
+    </li>
   `;
 }
 
 function renderCmaStudyCallout(resource) {
-  const body = resource
-    ? `<div class="cma-study-card">${renderResourceCard(resource, 0)}</div>`
-    : `<div class="learning-empty reveal-on-scroll">
-        <strong>CMA study is not on this shelf yet.</strong>
-        Publish a Currently Learning CMA / Gleim CMA Part 1 Learning Resource in Studio.
-        Mention CMA or Gleim in the title, category, or tags—no new document type needed.
-        <a class="resource-external" href="${STUDIO_URL}" target="_blank" rel="noreferrer">
-          Open Sanity Studio <span aria-hidden="true">↗</span>
-        </a>
-      </div>`;
+  if (!resource) return "";
 
   return `
-    <section class="cma-study" aria-labelledby="cmaStudyTitle">
-      <div class="learning-toolbar reveal-on-scroll">
-        <div>
-          <p class="section-kicker">study in public</p>
-          <h2 id="cmaStudyTitle">Currently learning CMA</h2>
-        </div>
-        <p class="learning-count">${resource ? "From the published shelf" : "Waiting on Studio"}</p>
-      </div>
-      ${body}
+    <section class="index-featured" aria-labelledby="cmaStudyTitle">
+      <h2 id="cmaStudyTitle" class="index-featured-label">currently learning</h2>
+      <ul class="index-list">${renderResourceRow(resource, 0)}</ul>
     </section>
   `;
 }
 
-function renderLibrary(resources) {
+function renderLibrary(resources, { pending = false } = {}) {
   const cmaResource = findCurrentlyLearningCma(resources);
-  const cards = resources.length
-    ? resources.map(renderResourceCard).join("")
-    : `<div class="learning-empty reveal-on-scroll">
-        <strong>The first shelf is ready.</strong>
-        Add a Learning Resource in Sanity and it will appear here after publishing.
-      </div>`;
+  const shelf = cmaResource
+    ? resources.filter((resource) => resource.slug !== cmaResource.slug)
+    : resources;
 
   return `
-    <main class="learning-page">
-      <section class="learning-hero reveal-on-scroll">
-        <p class="section-kicker">books, courses & useful rabbit holes</p>
-        <h1>Learning <span>Library</span></h1>
-        <p>
-          A living shelf of the books, courses, certifications, research, and media
-          shaping what I know—and what I am still working to understand.
-        </p>
-      </section>
+    <main class="index-page">
+      <header class="index-intro index-enter">
+        <h1>library</h1>
+        <p>books, courses, and the other things still shaping what I know.</p>
+      </header>
       ${renderCmaStudyCallout(cmaResource)}
-      <section aria-labelledby="libraryTitle">
-        <div class="learning-toolbar reveal-on-scroll">
-          <h2 id="libraryTitle">On the shelf</h2>
-          <p class="learning-count" id="learningCount">${resources.length} ${resources.length === 1 ? "resource" : "resources"}</p>
-        </div>
-        ${
-          resources.length
-            ? `<div class="learning-filters reveal-on-scroll" aria-label="Filter learning resources">
-                <button type="button" data-resource-filter="all" class="is-active" aria-pressed="true">All</button>
-                <button type="button" data-resource-filter="type:Book" aria-pressed="false">Books</button>
-                <button type="button" data-resource-filter="type:Course" aria-pressed="false">Courses</button>
-                <button type="button" data-resource-filter="type:Certification" aria-pressed="false">Certifications</button>
-                <button type="button" data-resource-filter="status:Currently Learning" aria-pressed="false">Currently Learning</button>
-                <button type="button" data-resource-filter="status:Completed" aria-pressed="false">Completed</button>
-              </div>`
-            : ""
-        }
-        <div class="resource-grid" id="resourceGrid">${cards}</div>
-        ${resources.length ? '<p class="learning-empty" id="resourceFilterEmpty" hidden>No resources match this filter yet.</p>' : ""}
-      </section>
+      ${
+        shelf.length
+          ? `<ul class="index-list">${shelf.map((resource, index) => renderResourceRow(resource, index + (cmaResource ? 1 : 0))).join("")}</ul>`
+          : cmaResource || pending
+            ? ""
+            : `<p class="index-empty index-enter" style="--stagger: 1">Nothing on the shelf yet.</p>`
+      }
     </main>
   `;
 }
@@ -204,16 +157,14 @@ function formatDate(value) {
 }
 
 function renderRelatedNote(note, index) {
+  const published = note.publishedAt ? ` datetime="${escapeHtml(String(note.publishedAt).slice(0, 10))}"` : "";
   return `
-    <a class="note-card reveal-on-scroll" href="/notes/${encodeURIComponent(note.slug)}" style="--reveal-delay: ${index * 70}ms">
-      <div class="note-card-topline">
-        <span class="note-category">${escapeHtml(note.category)}</span>
-        <span class="note-date">${escapeHtml(note.displayDate)}</span>
-      </div>
-      <h3>${escapeHtml(note.title)}</h3>
-      <p>${escapeHtml(note.excerpt)}</p>
-      <div class="note-card-footer"><span>${escapeHtml(note.readTimeLabel)}</span><span>Read note ↗</span></div>
-    </a>
+    <li>
+      <a class="index-row index-enter" href="/notes/${encodeURIComponent(note.slug)}" style="--stagger: ${index + 1}">
+        <span class="index-row-title">${escapeHtml(note.title)}</span>
+        <time class="index-row-meta"${published}>${escapeHtml(note.displayDate)}</time>
+      </a>
+    </li>
   `;
 }
 
@@ -272,8 +223,8 @@ function renderResourceDetail(resource, notes) {
         <h2 id="resourceNotesTitle">Notes From This Resource</h2>
         ${
           notes.length
-            ? `<div class="note-list">${notes.map(renderRelatedNote).join("")}</div>`
-            : `<div class="learning-empty"><strong>No notes yet.</strong>Learning notes connected to this resource will collect here automatically.</div>`
+            ? `<ul class="index-list">${notes.map(renderRelatedNote).join("")}</ul>`
+            : `<p class="index-empty">No notes yet.</p>`
         }
       </section>
     </main>
@@ -282,13 +233,12 @@ function renderResourceDetail(resource, notes) {
 
 function renderNotFound(message, href, label) {
   return `
-    <main class="learning-page">
-      <section class="learning-hero reveal-on-scroll">
-        <p class="section-kicker">404 / still learning</p>
-        <h1>Nothing on <span>this shelf.</span></h1>
+    <main class="index-page">
+      <header class="index-intro index-enter">
+        <h1>nothing on this shelf</h1>
         <p>${escapeHtml(message)}</p>
-        <a class="resource-external" href="${href}">${escapeHtml(label)} <span aria-hidden="true">→</span></a>
-      </section>
+        <p class="index-empty"><a href="${escapeHtml(href)}">${escapeHtml(label)}</a></p>
+      </header>
     </main>
   `;
 }
@@ -301,43 +251,7 @@ function renderPage(content) {
   cleanupReveals = initializeRevealAnimations(app);
 }
 
-function initializeFilters(resources) {
-  const buttons = document.querySelectorAll("[data-resource-filter]");
-  const cards = document.querySelectorAll("#resourceGrid .resource-card");
-  const count = document.getElementById("learningCount");
-  const empty = document.getElementById("resourceFilterEmpty");
-
-  buttons.forEach((button) => {
-    button.addEventListener("click", () => {
-      const filter = button.dataset.resourceFilter;
-      let visibleCount = 0;
-
-      buttons.forEach((item) => {
-        const active = item === button;
-        item.classList.toggle("is-active", active);
-        item.setAttribute("aria-pressed", String(active));
-      });
-      cards.forEach((card) => {
-        const [kind, value] = filter.split(":");
-        const visible =
-          filter === "all" ||
-          (kind === "type" && card.dataset.resourceType === value) ||
-          (kind === "status" && card.dataset.resourceStatus === value);
-        card.hidden = !visible;
-        if (visible) visibleCount += 1;
-      });
-
-      if (count) count.textContent = `${visibleCount} ${visibleCount === 1 ? "resource" : "resources"}`;
-      if (empty) empty.hidden = visibleCount > 0;
-    });
-  });
-
-  if (count) count.textContent = `${resources.length} ${resources.length === 1 ? "resource" : "resources"}`;
-}
-
 async function initializeLibrary() {
-  renderPage('<main class="learning-page"><div class="loading-state" role="status">Opening the library…</div></main>');
-
   try {
     if (resourceSlug) {
       const { resource, notes } = await loadLearningResource(resourceSlug);
@@ -345,10 +259,13 @@ async function initializeLibrary() {
       return;
     }
 
-    const resources = await loadLearningResources();
+    const cached = readCache("resources");
     setPageTitle("Learning Library");
-    renderPage(renderLibrary(resources));
-    initializeFilters(resources);
+    renderPage(renderLibrary(cached ?? [], { pending: !cached }));
+
+    const resources = await loadLearningResources();
+    writeCache("resources", resources);
+    if (!cached || !sameSlugList(cached, resources)) renderPage(renderLibrary(resources));
   } catch {
     renderPage(renderNotFound("The Library could not be loaded right now. Please try again shortly.", "/library/", "Try the Library again"));
   }

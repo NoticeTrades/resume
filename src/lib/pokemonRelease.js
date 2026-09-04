@@ -11,7 +11,31 @@ const pokemonOptions = [
   { name: "Giratina", src: "/pokemon/giratina.webp", size: "lg" },
 ];
 
-export function initializePokemonRelease() {
+const OBSTACLE_SELECTOR = [
+  ".wordmark",
+  ".site-header nav a",
+  ".market-strip",
+  ".social-icons a",
+  ".hero-copy",
+  ".contact-action",
+  ".about-copy",
+  ".about-portrait",
+  ".section-heading",
+  ".highlights-row",
+  ".highlights-more",
+  ".index-intro",
+  ".index-row",
+  ".home-index-more",
+  ".article-header",
+  ".article-body p",
+  ".article-body h2",
+  ".note-detail-header",
+  ".learning-detail-title",
+  ".resource-detail-cover",
+  ".resource-detail-copy",
+].join(", ");
+
+export function initializePokemonRelease({ onMove } = {}) {
   const button = document.getElementById("pokeballRelease");
   const pokemon = document.getElementById("pokemonWalker");
   const sprite = document.getElementById("pokemonSprite");
@@ -23,13 +47,16 @@ export function initializePokemonRelease() {
     dragging: false,
     x: window.innerWidth - 150,
     y: 120,
-    vx: 1.6,
-    vy: 1.15,
+    vx: 1.5,
+    vy: 1.1,
     facing: 1,
     frameId: 0,
     lastTime: 0,
     dragOffsetX: 0,
     dragOffsetY: 0,
+    pointerX: 0,
+    pointerY: 0,
+    pointerActive: false,
   };
 
   function setPosition() {
@@ -39,34 +66,130 @@ export function initializePokemonRelease() {
     pokemon.style.setProperty("--facing", state.facing);
   }
 
-  function clampToViewport() {
+  function getBounds() {
     const rect = pokemon.getBoundingClientRect();
-    const maxX = Math.max(8, window.innerWidth - rect.width - 8);
-    const maxY = Math.max(70, window.innerHeight - rect.height - 8);
+    return {
+      left: state.x + rect.width * 0.18,
+      top: state.y + rect.height * 0.2,
+      right: state.x + rect.width * 0.82,
+      bottom: state.y + rect.height * 0.82,
+      width: rect.width * 0.64,
+      height: rect.height * 0.62,
+    };
+  }
 
-    if (state.x < 8) {
-      state.x = 8;
-      state.vx = Math.abs(state.vx);
-    } else if (state.x > maxX) {
-      state.x = maxX;
-      state.vx = -Math.abs(state.vx);
-    }
-
-    if (state.y < 70) {
-      state.y = 70;
-      state.vy = Math.abs(state.vy);
-    } else if (state.y > maxY) {
-      state.y = maxY;
-      state.vy = -Math.abs(state.vy);
-    }
+  function getOverlap(a, b) {
+    const x = Math.min(a.right, b.right) - Math.max(a.left, b.left);
+    const y = Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top);
+    return x > 0 && y > 0 ? { x, y } : null;
   }
 
   function launch() {
     const angle = Math.random() * Math.PI * 2;
-    const speed = 1.5 + Math.random() * 0.75;
-    state.vx = Math.cos(angle) * speed || 1.5;
+    const speed = 1.45 + Math.random() * 0.85;
+    state.vx = Math.cos(angle) * speed || 1.4;
     state.vy = Math.sin(angle) * speed || 1;
     state.facing = state.vx >= 0 ? 1 : -1;
+  }
+
+  function normalizeSpeed(maxSpeed = 2.65) {
+    const speed = Math.hypot(state.vx, state.vy);
+    if (speed < 0.01) {
+      launch();
+      return;
+    }
+    const target = Math.min(maxSpeed, Math.max(1.45, speed));
+    state.vx = (state.vx / speed) * target;
+    state.vy = (state.vy / speed) * target;
+  }
+
+  function clampToViewport(bounds = getBounds()) {
+    const padding = 8;
+    const maxX = window.innerWidth - bounds.width - padding;
+    const maxY = window.innerHeight - bounds.height - padding;
+    const hit = { x: 0, y: 0 };
+
+    if (state.x < padding) {
+      state.x = padding;
+      hit.x = 1;
+    } else if (state.x > maxX) {
+      state.x = maxX;
+      hit.x = -1;
+    }
+
+    if (state.y < 70) {
+      state.y = 70;
+      hit.y = 1;
+    } else if (state.y > maxY) {
+      state.y = maxY;
+      hit.y = -1;
+    }
+
+    return hit;
+  }
+
+  function getObstacles() {
+    return Array.from(document.querySelectorAll(OBSTACLE_SELECTOR))
+      .map((target) => ({ target, rect: target.getBoundingClientRect() }))
+      .filter(({ target, rect }) => {
+        if (target === pokemon || target === button) return false;
+        if (pokemon.contains(target) || button.contains(target)) return false;
+        return rect.width > 8 && rect.height > 8 && rect.bottom > 0 && rect.top < window.innerHeight;
+      })
+      .map(({ rect }) => ({
+        left: rect.left - 6,
+        top: rect.top - 6,
+        right: rect.right + 6,
+        bottom: rect.bottom + 6,
+      }));
+  }
+
+  function bounceOffObstacles() {
+    const walkerRect = getBounds();
+    const viewportHit = clampToViewport(walkerRect);
+    if (viewportHit.x) state.vx = Math.abs(state.vx) * viewportHit.x;
+    if (viewportHit.y) state.vy = Math.abs(state.vy) * viewportHit.y;
+
+    const nextRect = getBounds();
+    for (const obstacle of getObstacles()) {
+      const overlap = getOverlap(nextRect, obstacle);
+      if (!overlap) continue;
+
+      if (overlap.x < overlap.y) {
+        state.x += nextRect.left < obstacle.left ? -overlap.x - 2 : overlap.x + 2;
+        state.vx *= -1;
+      } else {
+        state.y += nextRect.top < obstacle.top ? -overlap.y - 2 : overlap.y + 2;
+        state.vy *= -1;
+      }
+
+      state.vx += (Math.random() - 0.5) * 0.34;
+      state.vy += (Math.random() - 0.5) * 0.34;
+      normalizeSpeed();
+      break;
+    }
+  }
+
+  function applyCursorPush() {
+    if (!state.pointerActive) return;
+
+    const bounds = getBounds();
+    const centerX = bounds.left + bounds.width / 2;
+    const centerY = bounds.top + bounds.height / 2;
+    const dx = centerX - state.pointerX;
+    const dy = centerY - state.pointerY;
+    const distance = Math.hypot(dx, dy);
+    if (distance >= 132 || distance < 1) return;
+
+    const falloff = (1 - distance / 132) ** 2;
+    const force = 0.38 + falloff * 1.18;
+    state.vx += (dx / distance) * force;
+    state.vy += (dy / distance) * force;
+    normalizeSpeed(3.25);
+  }
+
+  function notifyMove() {
+    onMove?.(getBounds(), { vx: state.vx, vy: state.vy });
   }
 
   function animate(time) {
@@ -79,13 +202,17 @@ export function initializePokemonRelease() {
     state.lastTime = time;
 
     if (!state.dragging) {
+      applyCursorPush();
       state.x += state.vx * dt;
       state.y += state.vy * dt;
+      bounceOffObstacles();
+    } else {
       clampToViewport();
     }
 
     state.facing = state.vx >= 0 ? 1 : -1;
     setPosition();
+    notifyMove();
     state.frameId = requestAnimationFrame(animate);
   }
 
@@ -131,8 +258,12 @@ export function initializePokemonRelease() {
     event.preventDefault();
   }
 
-  function updateDrag(event) {
+  function updatePointer(event) {
+    state.pointerX = event.clientX;
+    state.pointerY = event.clientY;
+    state.pointerActive = true;
     if (!state.dragging) return;
+
     const previousX = state.x;
     const previousY = state.y;
     state.x = event.clientX - state.dragOffsetX;
@@ -141,6 +272,7 @@ export function initializePokemonRelease() {
     state.vy = (state.y - previousY) * 0.22;
     clampToViewport();
     setPosition();
+    notifyMove();
   }
 
   function endDrag(event) {
@@ -148,13 +280,7 @@ export function initializePokemonRelease() {
     state.dragging = false;
     pokemon.classList.remove("is-dragging");
     pokemon.releasePointerCapture?.(event.pointerId);
-    const speed = Math.hypot(state.vx, state.vy);
-    if (speed < 1.2) {
-      launch();
-    } else if (speed > 3.1) {
-      state.vx = (state.vx / speed) * 3.1;
-      state.vy = (state.vy / speed) * 3.1;
-    }
+    normalizeSpeed(3.1);
   }
 
   function handleVisibilityChange() {
@@ -180,7 +306,7 @@ export function initializePokemonRelease() {
   pokemon.addEventListener("animationend", clearPopAnimation);
   pokemon.addEventListener("pointerenter", launch);
   pokemon.addEventListener("pointerdown", startDrag);
-  window.addEventListener("pointermove", updateDrag);
+  window.addEventListener("pointermove", updatePointer);
   window.addEventListener("pointerup", endDrag);
   window.addEventListener("pointercancel", endDrag);
   window.addEventListener("resize", handleResize);
@@ -192,7 +318,7 @@ export function initializePokemonRelease() {
     pokemon.removeEventListener("animationend", clearPopAnimation);
     pokemon.removeEventListener("pointerenter", launch);
     pokemon.removeEventListener("pointerdown", startDrag);
-    window.removeEventListener("pointermove", updateDrag);
+    window.removeEventListener("pointermove", updatePointer);
     window.removeEventListener("pointerup", endDrag);
     window.removeEventListener("pointercancel", endDrag);
     window.removeEventListener("resize", handleResize);

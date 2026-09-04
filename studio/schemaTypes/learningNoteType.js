@@ -91,7 +91,16 @@ export const learningNoteType = defineType({
       name: "featured",
       title: "Feature this note",
       type: "boolean",
+      description: "Used as a tie-breaker when view counts are equal.",
       initialValue: false,
+    }),
+    defineField({
+      name: "views",
+      title: "Views",
+      type: "number",
+      description: "Counted automatically when someone opens this note. The homepage highlights the most viewed notes.",
+      initialValue: 0,
+      readOnly: true,
     }),
     defineField({
       name: "readTime",

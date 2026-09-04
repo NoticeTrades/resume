@@ -57,10 +57,9 @@ Always run the public production build after frontend changes. Run the Studio bu
 | `/library/[slug]` | Individual Learning Resource | `library/index.html`, `src/library.js` |
 | `/notes` | Today I Learned index | `notes/index.html`, `src/notes.js` |
 | `/notes/[slug]` | Individual Learning Note | `notes/index.html`, `src/notes.js` |
-| `/study` | Retrieval-practice drill for published Learning Notes | `study/index.html`, `src/study.js` |
 | `/api/market-data` | Vercel serverless Yahoo Finance proxy | `api/market-data.js` |
 
-Vite uses `vite.config.js` to build five HTML entry points. During local development it rewrites clean Library and Notes detail URLs to their index pages with a `slug` query parameter. `vercel.json` provides equivalent production rewrites. Keep both routing implementations aligned if these routes change. `/study` is a single index route and does not need a slug rewrite.
+Vite uses `vite.config.js` to build four HTML entry points. During local development it rewrites clean Library and Notes detail URLs to their index pages with a `slug` query parameter. `vercel.json` provides equivalent production rewrites. Keep both routing implementations aligned if these routes change. Do not add a `/study` route unless the site owner asks for it.
 
 ## Current working features
 
@@ -71,8 +70,8 @@ Vite uses `vite.config.js` to build five HTML entry points. During local develop
 - Square photo beside the About copy, popping in on scroll
 - Scroll-triggered reveal animations
 - Animated skill/interest items
-- Featured Musings loaded from published Sanity articles
-- Compact **Today I Learned** section loaded from the newest published Learning Note
+- Homepage Musings and Today I Learned highlights show the three most viewed published items
+- Opening a musing or note increments `views` through `POST /api/record-view` using `SANITY_API_WRITE_TOKEN` on the server only
 - YouTube and email icon links in the header
 - Clickable Pokeball with shine animation
 - Random released Pokemon that can move and be dragged
@@ -117,8 +116,8 @@ The anchored sections deliberately do not carry `reveal-on-scroll` themselves; t
 - Published Sanity `article` documents appear on `/writing`
 - Article detail views use their slug
 - Portable Text, images, links, and uploaded Sanity videos are supported
-- Featured articles are also used on the homepage
-- The shared header includes Home, About, Musings, Library, TIL, Study, YouTube, email, and the Pokeball interaction
+- Homepage highlights are the most viewed published articles, then featured, then newest
+- The shared header includes Home, About, Musings, Library, TIL, YouTube, email, and the Pokeball interaction
 
 ### Learning Library
 
@@ -136,10 +135,6 @@ The anchored sections deliberately do not carry `reveal-on-scroll` themselves; t
 - Previews display title, date, category, calculated or manually supplied read time, excerpt, and related resource when present
 - `/notes/[slug]` displays the note body, metadata, tags, and an optional **Learning From** link back to its resource
 - Notes are intentionally lightweight and do not require hero images, SEO descriptions, or complex article fields
-
-### Study
-
-`/study` is a retrieval-practice drill over published `learningNote` documents loaded with the existing `loadLearningNotes()` helper. It never invents cards, never writes to Sanity, and never copies exam-bank questions. One due note is shown at a time with the body hidden until **Reveal**; after recall the Portable Text body appears with **Again**, **Hard**, and **Got it**. A namespaced `resume-study-v1` localStorage schedule uses a small SM-2-lite ladder (Again ≈ 10 minutes; Got it grows 1d / 3d / 7d / 14d). Due notes come first, with a preference for notes whose related Library resource is actually CMA/Gleim when such a resource exists; if nothing is due, the page says so and offers the remaining unscheduled notes or a stop. Zero published notes links to Studio. Session meta shows how many are due today and suggests stopping after 20 reveals or 30 minutes without locking the UI. Space/Enter reveals; 1/J, 2/K, and 3/H rate.
 
 ## Sanity content model
 
@@ -159,7 +154,7 @@ Important fields include title, generated slug, type, author/creator, cover, cat
 
 Defined in `studio/schemaTypes/learningNoteType.js`.
 
-Important fields include title, generated slug, publication date, short Portable Text body, category, tags, optional `relatedResource` reference, featured flag, and optional read time. When read time is blank, the frontend estimates it at approximately 220 words per minute.
+Important fields include title, generated slug, publication date, short Portable Text body, category, tags, optional `relatedResource` reference, featured flag, automatic view count, and optional read time. When read time is blank, the frontend estimates it at approximately 220 words per minute.
 
 The resource/note relationship is deliberately stored only on `learningNote.relatedResource`. Never add a duplicate array of notes to a resource. `loadLearningResource()` derives related notes with a GROQ query.
 
@@ -207,15 +202,15 @@ These are configured in Sanity Manage under the project's API settings, not in t
 ## Shared frontend modules
 
 - `src/lib/siteChrome.js`: shared interior-page header, footer, navigation, social links, and Pokeball markup
-- `src/lib/studySchedule.js`: local-only SM-2-lite queue and `resume-study-v1` persistence for `/study`
 - `src/lib/puzzlePortrait.js`: homepage jigsaw portrait engine, exposing `disturb()`, `scatterFrom()`, `resume()`, and `pause()`
-- `src/lib/pokemonRelease.js`: reusable Pokemon release and drag behavior for interior pages
+- `src/lib/pokemonRelease.js`: Pokemon release, drag, wall bounce, and text-obstacle collisions for every page
+- `src/lib/pageData.js`: session cache and nav prefetch so Musings, Library, and TIL paint immediately on repeat visits
 - `src/lib/pageUi.js`: shared scroll reveal initialization and safe slug extraction
 - `src/learning.css`: shared Library and Today I Learned styles
 - `src/style.css`: homepage and shared global visual styles
 - `src/writing.css`: Musings-specific styles
 
-Prefer these shared modules over duplicating header, footer, reveal, or Pokemon logic. The homepage contains an older, more elaborate Pokemon implementation directly in `src/main.js`; interior pages use the reusable module.
+Prefer these shared modules over duplicating header, footer, reveal, or Pokemon logic. The homepage and interior pages share `initializePokemonRelease()`.
 
 ## Publishing workflow
 
@@ -236,7 +231,7 @@ Prefer these shared modules over duplicating header, footer, reveal, or Pokemon 
 
 ### Long-form article
 
-Create and publish an **Article** in Sanity. It will appear under `/writing` and may appear in the homepage Musings section when featured.
+Create and publish an **Article** in Sanity. It will appear under `/writing`. The homepage Musings section shows the most viewed published articles.
 
 ## Design and implementation guidelines
 
@@ -257,7 +252,7 @@ After relevant changes:
 
 1. Run `npm run build` from the repository root.
 2. If schemas changed, run `npm run build` from `studio/`.
-3. Test `/`, `/writing`, `/library`, `/notes`, and `/study` at desktop and mobile widths.
+3. Test `/`, `/writing`, `/library`, and `/notes` at desktop and mobile widths.
 4. Test one real detail route for each content type when published content is available.
 5. Test a nonexistent `/library/[slug]` and `/notes/[slug]` route.
 6. Confirm `/api/market-data` returns JSON and that the homepage fallback remains usable when it fails.

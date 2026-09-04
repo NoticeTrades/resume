@@ -82,8 +82,16 @@ export const articleType = defineType({
       name: "featured",
       title: "Feature on homepage",
       type: "boolean",
-      description: "Featured articles appear before recent articles on the homepage.",
+      description: "Used as a tie-breaker when view counts are equal.",
       initialValue: false,
+    }),
+    defineField({
+      name: "views",
+      title: "Views",
+      type: "number",
+      description: "Counted automatically when someone opens this musing. The homepage highlights the most viewed posts.",
+      initialValue: 0,
+      readOnly: true,
     }),
     defineField({
       name: "body",

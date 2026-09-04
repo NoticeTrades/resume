@@ -63,7 +63,7 @@ npm run deploy
 ## Learning Library and Today I Learned
 
 Published `learningResource` documents appear at `/library`, with clean detail URLs at `/library/[slug]`.
-`/library` also surfaces a currently-learning CMA study card when a published resource matches on status plus CMA/Gleim identity in existing fields. Otherwise it shows an empty state that points at Studio.
+`/library` pins a currently-learning CMA book at the top of the list when a published resource matches on status plus CMA/Gleim identity in existing fields.
 Published `learningNote` documents appear newest-first at `/notes`, with detail URLs at `/notes/[slug]`.
 
 A Learning Note can optionally reference a Learning Resource. Resource pages derive their related notes directly from that reference, so the relationship is never entered twice.

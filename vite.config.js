@@ -1,4 +1,5 @@
 import { defineConfig } from "vite";
+import { recordDocumentView } from "./server/recordView.js";
 import { fetchYahooQuotes } from "./server/yahooQuotes.js";
 
 function yahooFinanceDevProxy() {
@@ -63,8 +64,42 @@ function learningRouteFallbacks() {
   };
 }
 
+function recordViewDevProxy() {
+  return {
+    name: "record-view-dev-proxy",
+    configureServer(server) {
+      server.middlewares.use("/api/record-view", async (request, response) => {
+        if (request.method !== "POST") {
+          response.statusCode = 405;
+          response.setHeader("Allow", "POST");
+          response.end(JSON.stringify({ error: "Method not allowed" }));
+          return;
+        }
+
+        const chunks = [];
+        for await (const chunk of request) chunks.push(chunk);
+
+        let body = {};
+        try {
+          body = JSON.parse(Buffer.concat(chunks).toString() || "{}");
+        } catch {
+          response.statusCode = 400;
+          response.setHeader("Content-Type", "application/json");
+          response.end(JSON.stringify({ error: "Invalid JSON" }));
+          return;
+        }
+
+        const result = await recordDocumentView(body);
+        response.statusCode = result.skipped ? 204 : result.status;
+        response.setHeader("Content-Type", "application/json");
+        response.end(result.ok || result.skipped ? "" : JSON.stringify({ error: result.error }));
+      });
+    },
+  };
+}
+
 export default defineConfig({
-  plugins: [learningRouteFallbacks(), yahooFinanceDevProxy()],
+  plugins: [learningRouteFallbacks(), yahooFinanceDevProxy(), recordViewDevProxy()],
   build: {
     rollupOptions: {
       input: {
@@ -72,7 +107,6 @@ export default defineConfig({
         writing: "writing/index.html",
         library: "library/index.html",
         notes: "notes/index.html",
-        study: "study/index.html",
       },
     },
   },

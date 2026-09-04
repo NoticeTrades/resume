@@ -1,3 +1,7 @@
+@view-transition {
+  navigation: auto;
+}
+
 :root {
   --bg: #07172b;
   --bg-deep: #061325;
@@ -43,6 +47,7 @@ a {
   position: sticky;
   top: 0;
   z-index: 20;
+  view-transition-name: site-header;
   min-height: 64px;
   display: flex;
   align-items: center;
@@ -91,6 +96,8 @@ a {
 }
 
 .site-header nav a {
+  position: relative;
+  padding-bottom: 4px;
   color: #c3cce5;
   font-family: Oxanium, Sora, sans-serif;
   font-size: 13px;
@@ -100,8 +107,36 @@ a {
   transition: color 0.2s ease;
 }
 
-.site-header nav a:hover {
+.site-header nav a::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 1px;
+  background: #e8eef9;
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 0.22s cubic-bezier(0.22, 1, 0.32, 1);
+}
+
+.site-header nav a:hover,
+.site-header nav a:focus-visible {
+  color: #e8eef9;
+}
+
+.site-header nav a:hover::after,
+.site-header nav a:focus-visible::after {
+  transform: scaleX(1);
+}
+
+.site-header nav a[aria-current="page"] {
   color: var(--aqua);
+}
+
+.site-header nav a[aria-current="page"]::after {
+  background: var(--aqua);
+  transform: scaleX(1);
 }
 
 .market-strip {
@@ -763,6 +798,92 @@ p {
   transition-delay: calc(var(--focus-delay) + 70ms);
 }
 
+.highlights-section {
+  padding: 0 clamp(22px, 11vw, 240px) 110px;
+}
+
+.highlights-label {
+  margin: -18px 0 28px;
+  color: var(--aqua);
+  font-family: Oxanium, Sora, sans-serif;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.highlights-list {
+  margin: 0;
+  padding: 0;
+  max-width: 860px;
+  list-style: none;
+}
+
+.highlights-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 16px 32px;
+  padding: 18px 0;
+  border-bottom: 1px solid rgba(148, 169, 209, 0.12);
+}
+
+.highlights-row.reveal-on-scroll {
+  opacity: 0;
+  transform: translateY(30px) scale(0.955);
+  transition:
+    opacity 0.72s ease,
+    transform 0.82s cubic-bezier(0.16, 1, 0.3, 1);
+  transition-delay: var(--reveal-delay, 0ms);
+}
+
+.highlights-row.reveal-on-scroll.is-visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.highlights-row:focus-visible {
+  outline: 1px solid rgba(89, 241, 215, 0.55);
+  outline-offset: 6px;
+}
+
+.highlights-row-title {
+  color: #e8eef9;
+  font-size: clamp(17px, 1.6vw, 21px);
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  line-height: 1.35;
+}
+
+.highlights-row:hover .highlights-row-title,
+.highlights-row:focus-visible .highlights-row-title {
+  color: var(--aqua);
+}
+
+.highlights-row-meta {
+  color: #74839f;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.highlights-more {
+  display: inline-block;
+  margin-top: 26px;
+  color: #8593af;
+  font-size: 13px;
+}
+
+.highlights-more:hover,
+.highlights-more:focus-visible {
+  color: var(--aqua);
+}
+
+.highlights-empty {
+  color: #8593af;
+  font-size: 15px;
+}
+
 .writing-section {
   position: relative;
   padding: 20px clamp(22px, 11vw, 240px) 120px;
@@ -1182,7 +1303,8 @@ p {
     margin-top: 25px;
   }
 
-  .about-section {
+  .about-section,
+  .highlights-section {
     padding: 0 clamp(22px, 9vw, 200px) 90px;
   }
 
@@ -1378,6 +1500,15 @@ p {
     font-size: 34px;
   }
 
+  .highlights-section {
+    padding-bottom: 78px;
+  }
+
+  .highlights-row {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
   .writing-section {
     padding-bottom: 82px;
   }
@@ -1412,8 +1543,25 @@ p {
     transition-delay: 0ms !important;
   }
 
-  .reveal-on-scroll {
+  .reveal-on-scroll,
+  .highlights-row.reveal-on-scroll,
+  .index-enter,
+  .index-enter .index-row-title,
+  .index-intro.index-enter h1 {
     opacity: 1;
     transform: none;
+    animation: none;
+    color: inherit;
+  }
+
+  .index-enter .index-row-title,
+  .index-intro.index-enter h1,
+  .index-intro.index-enter h2 {
+    color: #e8eef9;
+  }
+
+  .home-index.is-live .index-list::before {
+    animation: none;
+    height: 100%;
   }
 }

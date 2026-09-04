@@ -1,3 +1,4 @@
+import { initializeIndexPointer, initializeNavPrefetch } from "./pageData.js";
 import { initializePokemonRelease } from "./pokemonRelease.js";
 import { syncHeaderOffset } from "./pageUi.js";
 
@@ -17,7 +18,6 @@ export function renderInteriorHeader(activePath) {
           ${navLink("/writing/", "Musings", activePath)}
           ${navLink("/library/", "Library", activePath)}
           ${navLink("/notes/", "TIL", activePath)}
-          ${navLink("/study/", "Study", activePath)}
         </nav>
       </div>
       <div class="social-icons writing-socials" aria-label="Social links">
@@ -55,9 +55,12 @@ export function renderSiteFooter() {
 export function initializeInteriorChrome() {
   const stopHeaderSync = syncHeaderOffset();
   const stopPokemon = initializePokemonRelease();
+  const stopPointer = initializeIndexPointer();
+  initializeNavPrefetch();
 
   return () => {
     stopHeaderSync();
     stopPokemon?.();
+    stopPointer?.();
   };
 }

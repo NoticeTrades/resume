@@ -17,6 +17,7 @@ const articleQuery = `
     publishedAt,
     readTime,
     featured,
+    views,
     "coverImage": coverImage.asset->url,
     body[]{
       ...,
@@ -68,6 +69,7 @@ const learningNoteFields = `
   category,
   tags,
   featured,
+  views,
   readTime,
   "relatedResource": relatedResource->{
     _id,
@@ -182,6 +184,7 @@ export async function loadPublishedArticles() {
     const minutes = Number(article.readTime) || estimateReadTime(article.body);
     return {
       ...article,
+      views: Number(article.views) || 0,
       displayDate: formatPublishedDate(article.publishedAt),
       readTime: `${minutes} min read`,
       bodyHtml: renderPortableText(article.body),
@@ -218,6 +221,7 @@ function normalizeLearningNote(note) {
   const minutes = Number(note.readTime) || estimateReadTime(note.body);
   return {
     ...note,
+    views: Number(note.views) || 0,
     displayDate: formatPublishedDate(note.publishedAt),
     readTimeLabel: `${minutes} min read`,
     excerpt: createExcerpt(note.body),
@@ -286,6 +290,25 @@ export async function loadLearningNote(slug) {
   `;
   const note = await fetchSanity(query, { slug });
   return note ? normalizeLearningNote(note) : null;
+}
+
+export function recordPageView(type, slug) {
+  if (!slug || typeof window === "undefined") return;
+
+  const key = `nt-viewed:${type}:${slug}`;
+  try {
+    if (sessionStorage.getItem(key)) return;
+    sessionStorage.setItem(key, "1");
+  } catch {
+    // Private mode should still attempt a single increment.
+  }
+
+  fetch("/api/record-view", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ type, slug }),
+    keepalive: true,
+  }).catch(() => {});
 }
 
 export async function loadLatestLearningNote() {
