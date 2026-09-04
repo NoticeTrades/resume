@@ -13,15 +13,4 @@ link: YouTube
 link: X
 link: Email Nicholas Thomas
 button: Release a random Pokemon
-heading h1: Nick's Musings
-heading h2: Latest musings
-button: All
-button: Philosophy
-button: Personal
-button: AI & Tools
-link: Philosophy ✦ The Quiet Value of Changing Your Mind A sample space for thinking about identity, uncertainty, and why changing your mind can be a sign of growth rather than inconsistency. Sample article · 6 min read Read musing ↗
-  heading h2: The Quiet Value of Changing Your Mind
-link: Personal ✦ What I Notice When I Slow Down A placeholder for honest observations about attention, ambition, daily routines, and the parts of life that are easy to overlook. Sample article · 5 min read Read musing ↗
-  heading h2: What I Notice When I Slow Down
-link: AI & Tools ✦ Tools That Earn a Place in My Workflow A home for practical notes about AI, automation, books, software, and the experiments that genuinely change how I work. Sample article · 4 min read Read musing ↗
-  heading h2: Tools That Earn a Place in My Workflow
+heading h1: musings

@@ -1,5 +1,5 @@
-title: Nick's Musings | Nicholas Thomas
-url: http://127.0.0.1:5173/writing/?article=this-slug-does-not-exist-verify
+title: Today I Learned | Nicholas Thomas
+url: http://127.0.0.1:5173/notes/
 
 link: Nicholas Thomas
 navigation: Main navigation
@@ -13,5 +13,6 @@ link: YouTube
 link: X
 link: Email Nicholas Thomas
 button: Release a random Pokemon
-heading h1: musings
-link: all musings
+heading h1: today i learned
+link: The Outcome Was Already in the Actions Sep 1, 2026
+link: It Was Never About the Mushroom Aug 24, 2026

@@ -31,6 +31,7 @@ Preconditions:
 ## Gotchas
 
 - Doctor does not require `/api/market-data` to be 200. Yahoo can fail while the site is healthy.
+- `.ticker-status` text may render in CSS uppercase (`YAHOO DELAYED`). Match case-insensitively against `Yahoo delayed` or `feed offline`.
 - Interior pages have no ticker. Do not look for it on `/writing/`, `/library/`, or `/notes/`.
 - The strip duplicates items for animation. Count unique symbols, not `.ticker-item` nodes.
 - Do not stub `fetch` inside the page. The production boundary is the Yahoo request inside the proxy.

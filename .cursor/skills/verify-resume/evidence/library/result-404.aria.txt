@@ -1,5 +1,5 @@
-title: Nick's Musings | Nicholas Thomas
-url: http://127.0.0.1:5173/writing/?article=this-slug-does-not-exist-verify
+title: Resource Not Found | Nicholas Thomas
+url: http://127.0.0.1:5173/library/this-slug-does-not-exist-verify
 
 link: Nicholas Thomas
 navigation: Main navigation
@@ -13,5 +13,5 @@ link: YouTube
 link: X
 link: Email Nicholas Thomas
 button: Release a random Pokemon
-heading h1: musings
-link: all musings
+heading h1: nothing on this shelf
+link: Back to the Library
