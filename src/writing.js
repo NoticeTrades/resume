@@ -2,7 +2,7 @@ import "./style.css";
 import "./writing.css";
 import { escapeHtml, loadPublishedArticles, recordPageView } from "./lib/sanity.js";
 import { readCache, sameSlugList, writeCache } from "./lib/pageData.js";
-import { initializeRevealAnimations } from "./lib/pageUi.js";
+import { getRouteSlug, initializeRevealAnimations } from "./lib/pageUi.js";
 import {
   initializeInteriorChrome,
   renderInteriorHeader,
@@ -10,7 +10,6 @@ import {
 } from "./lib/siteChrome.js";
 
 const app = document.querySelector("#app");
-const params = new URLSearchParams(window.location.search);
 let writingArticles = [];
 let cleanupPokemonRelease = () => {};
 let cleanupReveals = () => {};
@@ -58,7 +57,7 @@ function renderArticle(article) {
 
   return `
     <main class="writing-page article-page">
-      <article class="article-detail reveal-on-scroll">
+      <article class="article-detail">
         <a class="article-back" href="/writing/">← All musings</a>
         <header class="article-header">
           <span class="writing-category">${escapeHtml(article.category)}</span>
@@ -90,7 +89,7 @@ function renderNotFound() {
 function renderWritingPage() {
   cleanupPokemonRelease();
   cleanupReveals();
-  const selectedSlug = params.get("article");
+  const selectedSlug = getRouteSlug("writing", "article");
   const selectedArticle = selectedSlug
     ? writingArticles.find((article) => article.slug === selectedSlug)
     : null;
