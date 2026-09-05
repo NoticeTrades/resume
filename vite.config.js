@@ -34,17 +34,18 @@ function yahooFinanceDevProxy() {
   };
 }
 
-function rewriteLearningRoute(request) {
+function rewriteContentRoute(request) {
   const requestUrl = new URL(request.url, "http://localhost");
-  const match = requestUrl.pathname.match(/^\/(library|notes)\/([^/]+)\/?$/);
+  const match = requestUrl.pathname.match(/^\/(library|notes|writing)\/([^/]+)\/?$/);
   if (!match) return;
 
   const [, section, slug] = match;
+  const queryName = section === "writing" ? "article" : "slug";
   requestUrl.pathname = `/${section}/`;
   try {
-    requestUrl.searchParams.set("slug", decodeURIComponent(slug));
+    requestUrl.searchParams.set(queryName, decodeURIComponent(slug));
   } catch {
-    requestUrl.searchParams.set("slug", slug);
+    requestUrl.searchParams.set(queryName, slug);
   }
   request.url = `${requestUrl.pathname}${requestUrl.search}`;
 }
@@ -52,7 +53,7 @@ function rewriteLearningRoute(request) {
 function learningRouteFallbacks() {
   const configure = (server) => {
     server.middlewares.use((request, _response, next) => {
-      rewriteLearningRoute(request);
+      rewriteContentRoute(request);
       next();
     });
   };

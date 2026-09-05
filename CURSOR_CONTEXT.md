@@ -53,13 +53,14 @@ Always run the public production build after frontend changes. Run the Studio bu
 | --- | --- | --- |
 | `/` | Portfolio homepage | `index.html`, `src/main.js` |
 | `/writing` | Nick's Musings article index and article details | `writing/index.html`, `src/writing.js` |
+| `/writing/[slug]` | Individual musing (`?article=` after rewrite) | `writing/index.html`, `src/writing.js` |
 | `/library` | Learning Library index | `library/index.html`, `src/library.js` |
 | `/library/[slug]` | Individual Learning Resource | `library/index.html`, `src/library.js` |
 | `/notes` | Today I Learned index | `notes/index.html`, `src/notes.js` |
 | `/notes/[slug]` | Individual Learning Note | `notes/index.html`, `src/notes.js` |
 | `/api/market-data` | Vercel serverless Yahoo Finance proxy | `api/market-data.js` |
 
-Vite uses `vite.config.js` to build four HTML entry points. During local development it rewrites clean Library and Notes detail URLs to their index pages with a `slug` query parameter. `vercel.json` provides equivalent production rewrites. Keep both routing implementations aligned if these routes change. Do not add a `/study` route unless the site owner asks for it.
+Vite uses `vite.config.js` to build four HTML entry points. During local development it rewrites clean Library and Notes detail URLs to their index pages with a `slug` query parameter, and Musings detail URLs (`/writing/:slug`) to `?article=`. `vercel.json` provides equivalent production rewrites. Keep both routing implementations aligned if these routes change. Do not add a `/study` route unless the site owner asks for it.
 
 ## Current working features
 

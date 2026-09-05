@@ -44,8 +44,8 @@ export function syncHeaderOffset(header = document.querySelector(".site-header")
   return () => observer.disconnect();
 }
 
-export function getRouteSlug(section) {
-  const querySlug = new URLSearchParams(window.location.search).get("slug");
+export function getRouteSlug(section, queryName = "slug") {
+  const querySlug = new URLSearchParams(window.location.search).get(queryName);
   if (querySlug) return querySlug;
 
   const parts = window.location.pathname.split("/").filter(Boolean);

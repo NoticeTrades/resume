@@ -12,6 +12,10 @@
     {
       "source": "/notes/:slug",
       "destination": "/notes/?slug=:slug"
+    },
+    {
+      "source": "/writing/:slug",
+      "destination": "/writing/?article=:slug"
     }
   ],
   "headers": [
