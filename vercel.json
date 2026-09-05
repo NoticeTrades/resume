@@ -4,9 +4,25 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "cleanUrls": true,
+  "redirects": [
+    {
+      "source": "/about",
+      "destination": "/#about",
+      "permanent": false
+    },
+    {
+      "source": "/about/",
+      "destination": "/#about",
+      "permanent": false
+    }
+  ],
   "rewrites": [
     {
       "source": "/library/:slug",
+      "destination": "/library/?slug=:slug"
+    },
+    {
+      "source": "/library/:slug/",
       "destination": "/library/?slug=:slug"
     },
     {
@@ -14,7 +30,15 @@
       "destination": "/notes/?slug=:slug"
     },
     {
+      "source": "/notes/:slug/",
+      "destination": "/notes/?slug=:slug"
+    },
+    {
       "source": "/writing/:slug",
+      "destination": "/writing/?article=:slug"
+    },
+    {
+      "source": "/writing/:slug/",
       "destination": "/writing/?article=:slug"
     }
   ],
