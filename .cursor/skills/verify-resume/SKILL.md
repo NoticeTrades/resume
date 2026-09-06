@@ -93,7 +93,7 @@ Stable handles from this codebase (use these, not coordinates):
 | homepage wordmark `#reloadSite` | Button that reloads `/` |
 | interior wordmark `.wordmark` | Link to `/` named `Nicholas Thomas` |
 | `h1[aria-label="Hello, Nick Here."]` | Homepage typed headline |
-| button name `Scatter the puzzle portrait and let it rebuild itself` | Hero jigsaw |
+| button name `Shuffle Nicholas Thomas’s portrait cards` | Hero card deck |
 | button name `Release a random Pokemon` | `#pokeballRelease` |
 | `#pokemonWalker.is-released` | Pokemon is on screen |
 | `[aria-label="Futures market prices"]` | Homepage ticker |
@@ -129,7 +129,7 @@ Proof standards:
 - Writing, Library, and TIL may be empty. Empty copy is a valid result. Do not invent documents. There are no local sample musings.
 - Market ticker: `Yahoo delayed` (or another live `payload.status`) means the proxy answered. `feed offline` plus demo NQ/ES/YM/RTY prices means the UI fell back. Confirm with the `/api/market-data` body. Do not mock Yahoo inside the page.
 - Pokemon name is random. Proof is `#pokemonWalker` gaining `is-released` and `#pokemonSprite` getting a non-empty `alt`.
-- Puzzle proof is the click on the named portrait button plus a screenshot of the hero. Do not call `puzzlePortrait.disturb()` from eval.
+- Card portrait proof is the click on the named portrait button plus a screenshot of the hero. Do not call `cardPortrait.disturb()` from eval.
 
 ## Cleanup
 

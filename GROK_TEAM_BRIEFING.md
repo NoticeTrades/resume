@@ -17,7 +17,7 @@ Content is managed in **Sanity CMS** (`studio/`). The public site reads publishe
 
 | Surface | Role |
 | --- | --- |
-| `/` | Homepage: hero, puzzle portrait, About, TIL highlights, Musings highlights, ticker, Pokemon |
+| `/` | Homepage: hero, card portrait, About, TIL highlights, Musings highlights, ticker, Pokemon |
 | `/writing` | Nick's Musings (articles) |
 | `/library` | Learning Library (books, courses, certifications) |
 | `/notes` | Today I Learned short notes |
@@ -43,7 +43,7 @@ Shared modules to reuse instead of duplicating:
 - `src/lib/pageData.js` — session cache + nav prefetch (faster tab feel)
 - `src/lib/pageUi.js` — scroll reveals, slug helpers
 - `src/lib/pokemonRelease.js` — Pokeball release on every page
-- `src/lib/puzzlePortrait.js` — homepage jigsaw portrait only
+- `src/lib/cardPortrait.js` — homepage card portrait only
 
 ---
 
@@ -52,7 +52,7 @@ Shared modules to reuse instead of duplicating:
 ### Homepage
 
 - Dark navy + aqua visual language, sticky header, market ticker
-- Interactive **jigsaw puzzle portrait** (cutout silhouette, seat/scatter physics)
+- Interactive **poker-card portrait** (Joker portrait, four distinct card faces, three shuffles, 10-second cadence, silent animation)
 - **About me** section with scroll reveal + square photo
 - **Today I Learned** and **Musings** homepage blocks are now **highlights**:
   - Same heading style as About (`section-heading` + rule)
@@ -81,7 +81,7 @@ Shared modules to reuse instead of duplicating:
 
 - One shared release module on homepage and interior pages
 - Walker bounces off viewport edges and text/UI obstacles
-- Homepage still disturbs the puzzle portrait on collision
+- Homepage still disturbs the card portrait on collision
 
 ### Content model (Sanity)
 

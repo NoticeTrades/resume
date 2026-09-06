@@ -2,7 +2,7 @@
 import "./writing.css";
 import { initializeIndexPointer, initializeNavPrefetch, readCache, writeCache } from "./lib/pageData.js";
 import { initializePokemonRelease } from "./lib/pokemonRelease.js";
-import { createPuzzlePortrait } from "./lib/puzzlePortrait.js";
+import { createCardPortrait } from "./lib/cardPortrait.js";
 import { syncHeaderOffset } from "./lib/pageUi.js";
 import {
   escapeHtml,
@@ -104,18 +104,37 @@ app.innerHTML = `
 
   <main>
     <section class="hero" id="home">
-      <canvas id="pixelPortrait" class="pixel-stage"></canvas>
       <div class="pokemon-walker" id="pokemonWalker" aria-hidden="true">
         <img id="pokemonSprite" alt="" />
       </div>
       <div class="hero-inner">
-        <button
-          class="portrait-shell"
-          type="button"
-          aria-label="Scatter the puzzle portrait and let it rebuild itself"
-        >
-          <img src="/nick-cutout.webp" alt="" id="portraitSource" />
-        </button>
+        <div class="portrait-stage">
+          <button class="portrait-shell" type="button" aria-label="Shuffle Nicholas Thomas’s portrait cards">
+            <span class="portrait-deck" aria-hidden="true">
+              ${[
+                { rank: 'A', suit: '♠', color: 'aqua' },
+                { rank: 'Q', suit: '♥', color: 'red' },
+                { rank: 'K', suit: '♣', color: 'aqua' },
+                { rank: 'J', suit: '♦', color: 'red' },
+                { rank: 'JOKER', suit: '✦', color: 'aqua' },
+              ].map(({ rank, suit, color }, index) => `
+                <span class="portrait-card${index === 4 ? ' portrait-card--photo' : ''}" style="--card-index: ${index}">
+                  <span class="portrait-card-back"><span class="card-monogram">NT</span><span class="card-suit">♠</span></span>
+                  <span class="portrait-card-front card-face--${color}">
+                    <span class="card-corner${index === 4 ? ' card-corner--joker' : ''}">${rank}<span>${suit}</span></span>
+                    ${index === 4
+                      ? '<span class="joker-photo-frame"><img src="/nick-pixel-source.jpg" alt="" id="portraitSource" /></span><span class="joker-caption">the wild card</span>'
+                      : `<span class="card-face-center"><span>${rank}</span>${suit}</span>`}
+                    <span class="card-corner card-corner--bottom${index === 4 ? ' card-corner--joker' : ''}">${rank}<span>${suit}</span></span>
+                  </span>
+                </span>
+              `).join('')}
+            </span>
+          </button>
+          <div class="portrait-controls">
+            <span aria-hidden="true">a little sleight of hand</span>
+          </div>
+        </div>
         <div class="hero-copy">
           <p class="eyebrow">finance / trading / technology</p>
           <h1 id="typedIntro" aria-label="Hello, Nick Here."></h1>
@@ -209,9 +228,8 @@ document.getElementById("reloadSite").addEventListener("click", () => {
 
 const hero = document.querySelector(".hero");
 const portraitShell = document.querySelector(".portrait-shell");
-const puzzlePortrait = createPuzzlePortrait({
+const cardPortrait = createCardPortrait({
   hero,
-  canvas: document.getElementById("pixelPortrait"),
   image: document.getElementById("portraitSource"),
   shell: portraitShell,
 });
@@ -305,7 +323,7 @@ function disturbPortraitOnWalkerOverlap(walkerRect, velocity = { vx: 0, vy: 0 })
 
   const heroRect = hero.getBoundingClientRect();
   const walkerSpeed = Math.hypot(velocity.vx, velocity.vy);
-  puzzlePortrait.disturb(
+  cardPortrait.disturb(
     walkerRect.left + walkerRect.width / 2 - heroRect.left,
     walkerRect.top + walkerRect.height / 2 - heroRect.top,
     136,
@@ -321,10 +339,10 @@ initializePokemonRelease({
 
 function handleAnimationVisibility() {
   if (document.hidden) {
-    puzzlePortrait.pause();
+    cardPortrait.pause();
     return;
   }
-  puzzlePortrait.resume();
+  cardPortrait.resume();
 }
 
 document.addEventListener("visibilitychange", handleAnimationVisibility);

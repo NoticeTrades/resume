@@ -1,6 +1,6 @@
 # Homepage
 
-The homepage is the public landing page. A visitor sees a typed `Hello, Nick Here.` headline, an interactive puzzle portrait, About, Today I Learned highlights, musings highlights, a futures ticker, and header links to the rest of the site.
+The homepage is the public landing page. A visitor sees a typed `Hello, Nick Here.` headline, an interactive card portrait, About, Today I Learned highlights, musings highlights, a futures ticker, and header links to the rest of the site.
 
 ## Sub-features
 
@@ -10,7 +10,7 @@ The homepage is the public landing page. A visitor sees a typed `Hello, Nick Her
 - `home-featured-writing` lists up to three musing highlight rows that open `/writing/?article=<slug>`, or empty copy when none are published.
 - `home-til-teaser` lists up to three note highlight rows that open `/notes/<slug>`, or empty copy, plus `all notes`.
 - `home-pokemon` releases a named Pokemon from the pokeball button.
-- `home-puzzle` scatters the portrait from its named button.
+- `home-cards` shuffles the portrait from its named button.
 
 ## How to get to it (user POV)
 
@@ -26,7 +26,7 @@ Preconditions:
 - Resume is healthy at `http://127.0.0.1:5173`.
 - `control-resume doctor` reports `ok`.
 
-- **Open landing.** Go to `/`. Run `control-resume browser goto --path /`. Title is `Nicholas Thomas`. An `h1` named `Hello, Nick Here.` exists. A button named `Scatter the puzzle portrait and let it rebuild itself` is present.
+- **Open landing.** Go to `/`. Run `control-resume browser goto --path /`. Title is `Nicholas Thomas`. An `h1` named `Hello, Nick Here.` exists. A button named `Shuffle Nicholas Thomas’s portrait cards` is present.
 - **Read About.** Choose `About`. Run `control-resume browser click --role link --name "About"`. URL contains `#about`. Heading `about me` is visible. The About photo alt is `Nick and his girlfriend taking a mirror selfie`.
 - **Open Musings from header.** Choose `Musings`. Run `control-resume browser click --role link --name "Musings"`. URL is `/writing/`. Heading is `musings`.
 - **Return home.** Choose `Home`. Run `control-resume browser click --role link --name "Home"`. URL is `/` and the typed headline is back.
@@ -35,7 +35,11 @@ Preconditions:
 - **Featured musing.** From `/`, wait for a highlight row or empty copy. Run `control-resume browser goto --path /` and `control-resume browser wait --selector '#featuredWritingGrid .highlights-row, #featuredWritingGrid .highlights-empty'`. A row click uses `control-resume browser click --selector '#featuredWritingGrid .highlights-row'`. Result URL matches `/writing/?article=` and an article `h1` appears. If only empty copy `Nothing published yet.` is shown, record that and do not invent a row.
 - **Latest note teaser.** On `/`, inspect `#latestLearningNote`. Wait with `control-resume browser wait --selector '#latestLearningNote .highlights-row, #latestLearningNote .highlights-empty'`. A `.highlights-row` opens `/notes/<slug>`. Empty copy reads `Nothing published yet.` Choose `all notes` with `control-resume browser click --role link --name "all notes"` to reach `/notes/`.
 - **Release Pokemon.** Choose `Release a random Pokemon`. Run `control-resume browser click --role button --name "Release a random Pokemon"`. `#pokemonWalker` has class `is-released`. `#pokemonSprite` `alt` is one of Bulbasaur, Shinx, Flareon, Gengar, Pikachu, Blastoise, Dragonite, Mewtwo, Charizard, Giratina.
-- **Scatter portrait.** Choose `Scatter the puzzle portrait and let it rebuild itself`. Run `control-resume browser click --role button --name "Scatter the puzzle portrait and let it rebuild itself"`. Capture a screenshot of the hero. The button remains on the page.
+- **Shuffle portrait.** Choose `Shuffle Nicholas Thomas’s portrait cards`. Run `control-resume browser click --role button --name "Shuffle Nicholas Thomas’s portrait cards"`. Capture a screenshot of the hero. The button remains on the page.
+- **Automatic shuffles.** Leave the visible portrait untouched for 34 seconds. Three different shuffle sequences should begin at 10-second intervals and settle after three seconds. The variations are fan, riffle, and Hindu shuffle. The next sequence must differ from the preceding sequence.
+- **Keyboard and silent animation.** Focus the portrait and press Space or Enter. Cards shuffle silently, both automatically and after activation. There is no pause button; “a little sleight of hand” remains beneath the deck. Four ranked cards reveal their faces, then Nick’s Joker returns.
+- **Reduced motion.** With the browser's reduced-motion preference enabled, the portrait remains assembled, even when activated. Enabling the preference during a shuffle cancels it immediately.
+- **Offscreen.** Choose About or hide the tab during a shuffle; the cards settle. Returning to the portrait starts a fresh interval without replaying missed shuffles.
 - **Proof.** Run `control-resume browser snapshot --aria --path .cursor/skills/verify-resume/evidence/homepage/result.aria.txt` and `control-resume browser screenshot --path .cursor/skills/verify-resume/evidence/homepage/result.png`. The artifacts show the wordmark `Nicholas Thomas` and the heading for the screen you left on.
 
 ## Gotchas
@@ -47,4 +51,4 @@ Preconditions:
 - The homepage musings CTA is `all musings`. The TIL CTA is `all notes`.
 - Empty highlight copy is `Nothing published yet.` Do not expect older empty strings.
 - Pokemon `alt` is random. Do not assert a specific species.
-- Do not call internal puzzle or walker functions. Click the named buttons.
+- Do not call internal portrait or walker functions. Click the named buttons.
