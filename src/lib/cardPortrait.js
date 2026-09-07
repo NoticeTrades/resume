@@ -1,6 +1,11 @@
-const INTERACTION_COOLDOWN = 3800;
+import { createCardAudio } from './cardAudio.js';
+
 const DURATION = 3000;
 const EASING = 'cubic-bezier(0.45, 0, 0.2, 1)';
+// The final face-down keyframe for fan, riffle and Hindu respectively.
+const FINAL_TURN = [0.81, 0.85, 0.87];
+// With EASING, half the rotation occurs at x(.5), since y(.5) === .5.
+const HALF_TURN_TIME = 0.36875;
 // Nick's supplied photos only. The original is always the initial/reduced-motion face.
 const PORTRAIT_PHOTOS = [
   '/nick-pixel-source.jpg',
@@ -13,6 +18,7 @@ const PORTRAIT_PHOTOS = [
 // Keep the portrait's existing integration point; the old free-body puzzle
 // physics is replaced with bounded, interaction-driven card choreography.
 export function createCardPortrait({ hero, shell, image }) {
+  const audio = createCardAudio();
   const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
   const cards = [...shell.querySelectorAll('.portrait-card')];
   let animations = [];
@@ -20,13 +26,13 @@ export function createCardPortrait({ hero, shell, image }) {
   let visible = true;
   let suspended = document.hidden;
   let lastVariation = -1;
-  let lastStarted = -Infinity;
   let generation = 0;
   let bag = [];
   shell.dataset.state = 'idle';
   let photoIndex = 0;
   const loadedPhotos = new Map([[PORTRAIT_PHOTOS[0], image]]);
   let pendingPhoto = null;
+  const photoFrame = image.parentElement;
   image.classList.add('portrait-photo');
   // Keep the actual decoded image nodes: no network/decode work at reveal time.
   PORTRAIT_PHOTOS.slice(1).forEach(src => {
@@ -37,24 +43,39 @@ export function createCardPortrait({ hero, shell, image }) {
     preload.decode().then(() => loadedPhotos.set(src, preload)).catch(() => {});
   });
 
-  function preparePhoto() {
+  function preparePhoto(variation) {
     if (motionQuery.matches || loadedPhotos.size < 2) return;
     for (let step = 1; step < PORTRAIT_PHOTOS.length; step += 1) {
       const next = (photoIndex + step) % PORTRAIT_PHOTOS.length;
       const node = loadedPhotos.get(PORTRAIT_PHOTOS[next]);
       if (!node) continue;
       pendingPhoto = { index: next, node };
-      image.parentElement.append(node);
-      // All three techniques hold the Joker face-down by 17%. Stage the next
-      // photo at 20%, well before the final flip, on the same animation clock.
+      // Mount the decoded node ahead of time so the final reveal never needs
+      // a DOM insertion, src change, decode, or a new image animation.
+      node.style.opacity = '0';
+      photoFrame.append(node);
       animations.push(node.animate([
         { opacity: 0, offset: 0 },
-        { opacity: 0, offset: 0.2, easing: 'steps(1, start)' },
-        { opacity: 1, offset: 0.201 },
+        { opacity: 0, offset: FINAL_TURN[variation], easing: 'steps(1, start)' },
         { opacity: 1, offset: 1 },
       ], { duration: DURATION, fill: 'both' }));
       break;
     }
+  }
+
+  function maskPhotoWhileFaceDown(variation) {
+    const firstTurn = variation === 1 ? 0.16 : 0.17;
+    const finalTurn = FINAL_TURN[variation];
+    // Explicitly mask the image while the Joker faces away. Safari can
+    // composite image layers through a backface-hidden ancestor. Reveal just
+    // after the final turn passes 90 degrees, with the new photo already in
+    // place. This uses the same WAAPI clock as the transforms, not a timeout.
+    animations.push(photoFrame.animate([
+      { opacity: 1, offset: 0, easing: 'steps(1, end)' },
+      { opacity: 0, offset: firstTurn * HALF_TURN_TIME, easing: 'steps(1, end)' },
+      { opacity: 1, offset: finalTurn + (1 - finalTurn) * HALF_TURN_TIME + 0.001 },
+      { opacity: 1, offset: 1 },
+    ], { duration: DURATION, fill: 'both' }));
   }
 
   const canAnimate = () => ready && visible && !suspended && !motionQuery.matches;
@@ -86,7 +107,7 @@ export function createCardPortrait({ hero, shell, image }) {
         frame(0, rest), frame(0.17, closed),
         frame(0.4, pose(rank * 11, Math.abs(rank) * 2.5 - 4, rank * 12, face)),
         frame(0.59, pose(rank * 11, Math.abs(rank) * 2.5 - 4, rank * 12, face)),
-        frame(0.81, closed), frame(1, rest),
+        frame(FINAL_TURN[variation], closed), frame(1, rest),
       ];
     }
     if (variation === 1) {
@@ -101,7 +122,7 @@ export function createCardPortrait({ hero, shell, image }) {
         frame(0.4, bent), frame(release, bent),
         frame(release + 0.065, `${pose(side * 4, (4 - index) * 0.7, side * 2, face)} rotateX(0deg)`, index + 5),
         frame(0.76, pose(0, (4 - index) * 0.7, 0, face), index + 5),
-        frame(0.85, closed), frame(1, rest),
+        frame(FINAL_TURN[variation], closed), frame(1, rest),
       ];
     }
     // Hindu shuffle: successive small packets are pulled lengthwise from the
@@ -114,13 +135,17 @@ export function createCardPortrait({ hero, shell, image }) {
       frame(pull, held),
       frame(pull + 0.055, pose(-6, 5, -4, face), index + 5),
       frame(pull + 0.11, caught, index + 5),
-      frame(0.78, caught, index + 5), frame(0.87, closed), frame(1, rest),
+      frame(0.78, caught, index + 5), frame(FINAL_TURN[variation], closed), frame(1, rest),
     ];
   }
 
   function settle({ completed = false } = {}) {
+    audio.stop();
     generation += 1;
     if (pendingPhoto) {
+      // Nodes are reused, including the original on cycle wraparound. Clear
+      // staging styles on cancellation too, before reduced motion restores it.
+      pendingPhoto.node.style.removeProperty('opacity');
       if (completed) {
         image.removeAttribute('id');
         image.remove();
@@ -137,11 +162,10 @@ export function createCardPortrait({ hero, shell, image }) {
     shell.dataset.state = 'idle';
   }
 
-  function shuffle() {
+  function shuffle({ silent = false } = {}) {
     if (!canAnimate() || animations.length) return;
     const variation = nextVariation();
     const currentGeneration = ++generation;
-    lastStarted = performance.now();
     shell.dataset.state = 'shuffling';
     shell.dataset.shuffle = ['fan', 'riffle', 'hindu'][variation];
     animations = cards.map((card, index) => card.animate(framesFor(index, variation).map(frame => ({ ...frame, easing: EASING })), {
@@ -150,9 +174,11 @@ export function createCardPortrait({ hero, shell, image }) {
       easing: 'linear',
       fill: 'both',
     }));
-    preparePhoto();
+    preparePhoto(variation);
+    maskPhotoWhileFaceDown(variation);
     const startTime = document.timeline.currentTime;
     animations.forEach(animation => { animation.startTime = startTime; });
+    if (!silent) audio.play(variation, startTime);
     Promise.all(animations.map((animation) => animation.finished)).then(() => {
       if (generation === currentGeneration) settle({ completed: true });
     }).catch(() => { /* Visibility and motion changes cancel back to the crisp photo. */ });
@@ -167,10 +193,9 @@ export function createCardPortrait({ hero, shell, image }) {
     suspended = document.hidden;
   }
 
-  // A passing Pokemon may trigger one shuffle, but continuous contact cannot
-  // keep restarting the sequence or exhaust the portrait's quiet interval.
+  // Pokemon contact follows the same in-flight guard as direct interaction.
   function disturb(x, y, radius = 120) {
-    if (performance.now() - lastStarted < INTERACTION_COOLDOWN) return;
+    if (!audio.canPlay()) return;
     const rect = shell.getBoundingClientRect();
     const heroRect = hero.getBoundingClientRect();
     const centerX = rect.left - heroRect.left + rect.width / 2;
@@ -181,8 +206,7 @@ export function createCardPortrait({ hero, shell, image }) {
   // Pointer activity may replay a settled deck, but never queues a replay or
   // restarts an in-flight shuffle. A still cursor leaves the portrait still.
   function interact(event) {
-    if (event?.pointerType === 'touch') return;
-    if (performance.now() - lastStarted < INTERACTION_COOLDOWN) return;
+    if (event?.pointerType === 'touch' || !audio.canPlay()) return;
     shuffle();
   }
   let pointer = null;
@@ -197,7 +221,16 @@ export function createCardPortrait({ hero, shell, image }) {
     interact(event);
   });
   shell.addEventListener('pointerleave', () => { pointer = null; });
+  // Native button click handles mouse, touch and keyboard once. Touch hover
+  // is ignored above; no pointer-up handler or queued replay duplicates a tap.
   shell.addEventListener('click', shuffle);
+  // Capture runs before the button click starts its trick. touchend is kept
+  // explicitly for iPhone Safari; pointer hover never unlocks audio.
+  const unlockAudio = (event) => { if (event.isTrusted) audio.unlock(); };
+  document.addEventListener('pointerdown', unlockAudio, { capture: true, passive: true });
+  document.addEventListener('touchend', unlockAudio, { capture: true, passive: true });
+  document.addEventListener('click', unlockAudio, { capture: true, passive: true });
+  document.addEventListener('keydown', unlockAudio, { capture: true });
   const observer = new IntersectionObserver(([entry]) => {
     visible = entry.isIntersecting;
     if (!visible) settle();
@@ -221,7 +254,7 @@ export function createCardPortrait({ hero, shell, image }) {
   function init() {
     if (ready) return;
     ready = true;
-    shuffle();
+    shuffle({ silent: true });
   }
   if (image.complete && image.naturalWidth) init();
   else image.addEventListener('load', init, { once: true });

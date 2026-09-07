@@ -1,6 +1,6 @@
 # Cursor Project Context — Nicholas Thomas Portfolio
 
-Last updated: September 6, 2026
+Last updated: September 7, 2026
 
 Read this file before making changes. It summarizes the current architecture, working features, content workflow, and important implementation decisions.
 
@@ -85,10 +85,10 @@ The ticker calls `/api/market-data` immediately and every eight seconds while th
 The homepage uses `src/lib/cardPortrait.js` and CSS-transformed cards inside `.portrait-shell`. It replaces the canvas jigsaw and its scatter physics.
 
 - Five navy cards use `/nick-card-back.svg`: custom market-tape ticks and registration marks, with an HTML Oxanium NT monogram sharing the site font. Ranks use Oxanium, with small aqua/coral suit marks. The ace of spades, queen of hearts, king of clubs, and jack of diamonds reveal their faces during the shuffle. Nick is the Joker. The original `/nick-pixel-source.jpg` photo fills a double-line inset frame with a subtle edge tint, coordinated matte, retaining the original square childhood photo. Portrait-format photos use cover cropping with individual object positions for the waterfall and snow shots.
-- Three bounded sequences — fan, riffle, and Hindu shuffle — run through the Web Animations API, taking three seconds. Riffle separates two packets, hinges and alternately releases cards before squaring up. Hindu pulls successive packets lengthwise into a receiving stack. All techniques are silent. A shuffled bag plays all three before refilling and prevents consecutive repeats.
-- One intro plays when the image loads, then the deck stays still indefinitely. Hero/card pointer entry, movement of at least 12px over the card, clicks, Enter/Space, and Pokemon contact can retrigger it. Hover/movement/collision triggers have a 3.8-second cooldown; in-flight activations are ignored and no replay is queued. Touch uses the button click, not pointer hover.
-- There is no pause button, metaphor caption, or sparkle on the cards. The childhood Joker photo is the initial and reduced-motion default. After each completed shuffle, the face advances through the curated `PORTRAIT_PHOTOS` array: childhood, summer waterfall, mirror photo, snow portrait, autumn waterfall. The four additional JPEGs were supplied by Nick and copied into `public/` without image edits. The actual decoded image nodes are retained; failed or pending loads are skipped. The next photo is staged over the current photo at 20% of the shuffle, when every technique holds the Joker face-down. Its opacity uses the same WAAPI start time as the cards, so it is already present for the final flip. Completion commits that node without a src change; cancellation removes the staged node and retains the previous photo.
-- Shuffle sound has been removed at Nick’s request. No audio context or sound-unlock event listeners are created.
+- Three bounded sequences — fan, riffle, and Hindu shuffle — run through the Web Animations API, taking three seconds. Riffle separates two packets, hinges and alternately releases cards before squaring up. Hindu pulls successive packets lengthwise into a receiving stack. Each technique has its own recording supplied by Nick, scheduled against the animation timeline after audio is unlocked by a trusted gesture. A shuffled bag plays all three before refilling and prevents consecutive repeats.
+- One intro plays when the image loads, then the deck stays still until interaction. Hero/card non-touch pointer entry, movement of at least 12px over the card, mouse clicks, taps, Enter/Space, and Pokemon contact can retrigger it. There is no cooldown. On browsers with Web Audio, hover and Pokemon contact wait until trusted input has unlocked a running audio context, so a silent hover cannot consume the first click. In-flight activations are ignored and no replay is queued. Touch hover is ignored; the native button click handles taps once, including Safari compatibility clicks.
+- There is no pause button, metaphor caption, or sparkle on the cards. The childhood Joker photo is the initial and reduced-motion default. After each completed shuffle, the face advances through the curated `PORTRAIT_PHOTOS` array: childhood, summer waterfall, mirror photo, snow portrait, autumn waterfall. The four additional JPEGs were supplied by Nick and copied into `public/` without image edits. The actual decoded image nodes are retained; failed or pending loads are skipped. The next decoded photo is mounted invisibly before the shuffle, and becomes opaque at the last face-down keyframe (81% fan, 85% riffle, 87% Hindu). A separate opacity mask keeps the entire photo frame hidden while the Joker faces away, preventing mobile backface leaks. The frame becomes visible just after the final rotation crosses 90 degrees, so the incoming image is already present on the final face-up turn. Both opacity effects share the card transforms’ WAAPI clock; there is no timeout or post-settle reveal. Completion retains that same node and removes the old image; cancellation removes the staged image and retains the previous photo.
+- Nick supplied three recordings on September 7. `src/lib/cardAudio.js` maps Fan Cards to fan, Shuffle to riffle, and Count 4 cards to Hindu. Prepared WAV assets in `public/audio/cards/` have leading silence removed, pitch-preserving timing adjustments, and measured loudness within 0.1 LU of -23 LUFS. Their README records exact source trims, cues and peak levels. Web Audio predecodes the assets and schedules each cue against the card timeline. Trusted pointer/click/touchend/keyboard input unlocks the context (touchend is explicit for iPhone Safari); the initial autoplay trick is explicitly silent, even if input arrives before the image finishes loading. Hover is gated by audio readiness; the first click/tap starts the sound-enabled trick rather than unlocking an already-running silent hover trick. Cancellation, hidden/offscreen state and reduced motion stop scheduled/playing audio. Slow or failed loads are skipped rather than played late. A resumed context does not replay old sound.
 - Reduced-motion users receive a static portrait with automatic and manual shuffles disabled. Changing the preference cancels any active animation and restores `/nick-pixel-source.jpg`.
 - Hidden tabs and offscreen portraits cancel to the assembled state. Returning does not trigger a shuffle; only a new interaction can do that. There is no interval or timeout in the portrait module.
 - Animation uses the existing transform and stacking-order keyframes. The portrait has no continuous animation loop, geometry rebuild, or canvas bitmap allocation.
@@ -96,7 +96,7 @@ The homepage uses `src/lib/cardPortrait.js` and CSS-transformed cards inside `.p
 
 ### Hero copy and typography
 
-The hero has no eyebrow or replacement tagline. The complete “Hello, Nick Here.” line fades in once using Oxanium, with no typing timer, blinking caret, or text glow. The contact link has an aqua underline and no glass fill. The introduction is one sentence about financial models, trading ideas, AI tools, automations, and time to recharge. The two-column layout, futures ticker, and Pokemon remain.
+The hero has no eyebrow or replacement tagline. The accessible “Hello, Nick Here.” heading stays complete while its visible text types once using Oxanium, with a blinking caret. Nick is solid #5dffd0 with no glow; reduced motion shows the complete text and hides the caret. The contact link has an aqua underline and no glass fill. The introduction is: “I do financial planning and analysis for HVAC businesses, then spend probably too much of my free time testing trading ideas and tinkering with AI tools and automations, with some time left to recharge.” The two-column layout, futures ticker, and Pokemon remain.
 
 ### Anchor scrolling
 
@@ -195,6 +195,7 @@ These are configured in Sanity Manage under the project's API settings, not in t
 ## Shared frontend modules
 
 - `src/lib/siteChrome.js`: shared interior-page header, footer, navigation, social links, and Pokeball markup
+- `src/lib/cardAudio.js`: normalized card recordings, gesture unlock, scheduled cue playback and cancellation
 - `src/lib/cardPortrait.js`: homepage card portrait choreography, exposing `disturb()`, `scatterFrom()`, `resume()`, and `pause()`
 - `src/lib/pokemonRelease.js`: Pokemon release, drag, wall bounce, and text-obstacle collisions for every page
 - `src/lib/pageData.js`: session cache and nav prefetch so Musings, Library, and TIL paint immediately on repeat visits
@@ -256,3 +257,16 @@ After relevant changes:
 
 The Learning Library and Today I Learned implementation was introduced in commit `1dd8358` (`Add connected learning library and notes`). At the time of this document, the repository's `main` branch matches `origin/main`, the Sanity Studio schemas are deployed, and the production Library and Notes routes are reachable.
 
+
+## Local card timing verification (September 7, 2026)
+
+- `node --test tests/cardPortrait.test.js` covers retaining the staged decoded node, immediate interaction replay with no cooldown, touch clicks, offscreen/tab cancellation, reduced motion, failed photo loads, and cycle wraparound.
+- `tests/cardPortrait.browser.cjs` runs against an already-started local Vite server with an externally installed Playwright package (`PLAYWRIGHT_MODULE` can specify its path). It checks Chromium and WebKit at desktop and iPhone 13 viewports, all three shuffle techniques at precise animation times and in real time, hidden photo layers while face-down, the incoming photo on the final turn, and identical portrait pixels at settle and 1.1 seconds later. Results/screenshots go to ignored `test-results/card-reveal/`. The older `card-portrait` evidence tested a superseded settle-only reveal and cooldown; it is not evidence for the current behavior.
+- Windows WebKit with an iPhone viewport is not physical iOS Safari verification. An actual iPhone check remains necessary before claiming that coverage.
+- This workspace was supplied as a source snapshot without `.git`; changes are local and are not published. Push/merge/deploy only when Nick says.
+
+## Audio verification (September 7, 2026)
+
+- `node --test tests/cardAudio.test.js tests/cardPortrait.test.js`: 13 tests cover the first mouse-click/hover interaction, silent autoplay, correct cue mapping, cancellation/interruption, failed/late loads, and existing card behavior.
+- `tests/cardAudio.browser.cjs` checks real decoding, trusted input, scheduled times, clip durations and cancellation. Desktop/mobile Chromium passed. The installed Windows WebKit build does not expose Web Audio, so audio testing there is explicitly not tested; it is not a Safari audio pass. Evidence lives in ignored `test-results/audio/`.
+- Physical iPhone Safari audio check: Nick tested the same-Wi-Fi preview and reported “All three sound right, including after returning to Safari.” This is user-reported device verification on September 7, 2026. iPhone model and iOS version were not supplied. No remote device instrumentation was used.
