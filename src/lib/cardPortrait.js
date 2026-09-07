@@ -1,22 +1,61 @@
-const SHUFFLE_INTERVAL = 10_000;
+const INTERACTION_COOLDOWN = 3800;
 const DURATION = 3000;
 const EASING = 'cubic-bezier(0.45, 0, 0.2, 1)';
+// Nick's supplied photos only. The original is always the initial/reduced-motion face.
+const PORTRAIT_PHOTOS = [
+  '/nick-pixel-source.jpg',
+  '/nick-waterfall-summer.jpg',
+  '/nick-mirror.jpg',
+  '/nick-snow.jpg',
+  '/nick-waterfall-autumn.jpg',
+];
 
 // Keep the portrait's existing integration point; the old free-body puzzle
-// physics is replaced with bounded card choreography and an idle timer.
+// physics is replaced with bounded, interaction-driven card choreography.
 export function createCardPortrait({ hero, shell, image }) {
   const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
   const cards = [...shell.querySelectorAll('.portrait-card')];
   let animations = [];
-  let timer = 0;
   let ready = false;
   let visible = true;
   let suspended = document.hidden;
   let lastVariation = -1;
-  let nextShuffle = performance.now() + SHUFFLE_INTERVAL;
   let lastStarted = -Infinity;
   let generation = 0;
   let bag = [];
+  shell.dataset.state = 'idle';
+  let photoIndex = 0;
+  const loadedPhotos = new Map([[PORTRAIT_PHOTOS[0], image]]);
+  let pendingPhoto = null;
+  image.classList.add('portrait-photo');
+  // Keep the actual decoded image nodes: no network/decode work at reveal time.
+  PORTRAIT_PHOTOS.slice(1).forEach(src => {
+    const preload = new Image();
+    preload.alt = '';
+    preload.className = 'portrait-photo';
+    preload.src = src;
+    preload.decode().then(() => loadedPhotos.set(src, preload)).catch(() => {});
+  });
+
+  function preparePhoto() {
+    if (motionQuery.matches || loadedPhotos.size < 2) return;
+    for (let step = 1; step < PORTRAIT_PHOTOS.length; step += 1) {
+      const next = (photoIndex + step) % PORTRAIT_PHOTOS.length;
+      const node = loadedPhotos.get(PORTRAIT_PHOTOS[next]);
+      if (!node) continue;
+      pendingPhoto = { index: next, node };
+      image.parentElement.append(node);
+      // All three techniques hold the Joker face-down by 17%. Stage the next
+      // photo at 20%, well before the final flip, on the same animation clock.
+      animations.push(node.animate([
+        { opacity: 0, offset: 0 },
+        { opacity: 0, offset: 0.2, easing: 'steps(1, start)' },
+        { opacity: 1, offset: 0.201 },
+        { opacity: 1, offset: 1 },
+      ], { duration: DURATION, fill: 'both' }));
+      break;
+    }
+  }
 
   const canAnimate = () => ready && visible && !suspended && !motionQuery.matches;
   const home = (index) => `translate(${(index - 4) * 2}px, ${(4 - index) * 2}px) rotate(0deg) rotateY(${index === 4 ? 0 : 180}deg) scale(1)`;
@@ -79,21 +118,23 @@ export function createCardPortrait({ hero, shell, image }) {
     ];
   }
 
-  function settle() {
+  function settle({ completed = false } = {}) {
     generation += 1;
+    if (pendingPhoto) {
+      if (completed) {
+        image.removeAttribute('id');
+        image.remove();
+        image = pendingPhoto.node;
+        image.id = 'portraitSource';
+        photoIndex = pendingPhoto.index;
+      } else {
+        pendingPhoto.node.remove();
+      }
+      pendingPhoto = null;
+    }
     animations.forEach((animation) => animation.cancel());
     animations = [];
     shell.dataset.state = 'idle';
-  }
-
-  function schedule() {
-    clearTimeout(timer);
-    if (!canAnimate()) return;
-    timer = window.setTimeout(() => {
-      nextShuffle = performance.now() + SHUFFLE_INTERVAL;
-      shuffle();
-      schedule();
-    }, Math.max(0, nextShuffle - performance.now()));
   }
 
   function shuffle() {
@@ -109,27 +150,27 @@ export function createCardPortrait({ hero, shell, image }) {
       easing: 'linear',
       fill: 'both',
     }));
+    preparePhoto();
+    const startTime = document.timeline.currentTime;
+    animations.forEach(animation => { animation.startTime = startTime; });
     Promise.all(animations.map((animation) => animation.finished)).then(() => {
-      if (generation === currentGeneration) settle();
+      if (generation === currentGeneration) settle({ completed: true });
     }).catch(() => { /* Visibility and motion changes cancel back to the crisp photo. */ });
   }
 
   function pause() {
     suspended = true;
-    clearTimeout(timer);
     settle();
   }
 
   function resume() {
     suspended = document.hidden;
-    nextShuffle = performance.now() + SHUFFLE_INTERVAL;
-    schedule();
   }
 
   // A passing Pokemon may trigger one shuffle, but continuous contact cannot
   // keep restarting the sequence or exhaust the portrait's quiet interval.
   function disturb(x, y, radius = 120) {
-    if (performance.now() - lastStarted < SHUFFLE_INTERVAL) return;
+    if (performance.now() - lastStarted < INTERACTION_COOLDOWN) return;
     const rect = shell.getBoundingClientRect();
     const heroRect = hero.getBoundingClientRect();
     const centerX = rect.left - heroRect.left + rect.width / 2;
@@ -137,32 +178,50 @@ export function createCardPortrait({ hero, shell, image }) {
     if (Math.hypot(centerX - x, centerY - y) < radius + rect.width / 2) shuffle();
   }
 
-  shell.addEventListener('click', () => {
+  // Pointer activity may replay a settled deck, but never queues a replay or
+  // restarts an in-flight shuffle. A still cursor leaves the portrait still.
+  function interact(event) {
+    if (event?.pointerType === 'touch') return;
+    if (performance.now() - lastStarted < INTERACTION_COOLDOWN) return;
     shuffle();
+  }
+  let pointer = null;
+  hero.addEventListener('pointerenter', interact);
+  shell.addEventListener('pointerenter', interact);
+  shell.addEventListener('pointermove', (event) => {
+    if (event.pointerType === 'touch') return;
+    const next = { x: event.clientX, y: event.clientY };
+    const distance = pointer ? Math.hypot(next.x - pointer.x, next.y - pointer.y) : Infinity;
+    if (distance < 12) return;
+    pointer = next;
+    interact(event);
   });
+  shell.addEventListener('pointerleave', () => { pointer = null; });
+  shell.addEventListener('click', shuffle);
   const observer = new IntersectionObserver(([entry]) => {
     visible = entry.isIntersecting;
-    if (!visible) {
-      clearTimeout(timer);
-      settle();
-    } else {
-      nextShuffle = performance.now() + SHUFFLE_INTERVAL;
-      schedule();
-    }
+    if (!visible) settle();
   });
   observer.observe(shell);
 
   motionQuery.addEventListener('change', () => {
     settle();
-    nextShuffle = performance.now() + SHUFFLE_INTERVAL;
-    schedule();
+    if (motionQuery.matches) {
+      photoIndex = 0;
+      const original = loadedPhotos.get(PORTRAIT_PHOTOS[0]);
+      if (image !== original) {
+        image.removeAttribute('id');
+        image.replaceWith(original);
+        image = original;
+        image.id = 'portraitSource';
+      }
+    }
   });
 
   function init() {
     if (ready) return;
     ready = true;
     shuffle();
-    schedule();
   }
   if (image.complete && image.naturalWidth) init();
   else image.addEventListener('load', init, { once: true });

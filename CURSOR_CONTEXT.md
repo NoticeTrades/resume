@@ -84,16 +84,19 @@ The ticker calls `/api/market-data` immediately and every eight seconds while th
 
 The homepage uses `src/lib/cardPortrait.js` and CSS-transformed cards inside `.portrait-shell`. It replaces the canvas jigsaw and its scatter physics.
 
-- Five navy cards have patterned backs and NT initials. The ace of spades, queen of hearts, king of clubs, and jack of diamonds reveal their faces during the shuffle. Nick is the Joker. The original `/nick-pixel-source.jpg` photo is contained in a double-line inset frame with a subtle edge tint, coordinated matte, and centered caption, preserving the newspaper that the previous cutout removed.
+- Five navy cards use `/nick-card-back.svg`: custom market-tape ticks and registration marks, with an HTML Oxanium NT monogram sharing the site font. Ranks use Oxanium, with small aqua/coral suit marks. The ace of spades, queen of hearts, king of clubs, and jack of diamonds reveal their faces during the shuffle. Nick is the Joker. The original `/nick-pixel-source.jpg` photo fills a double-line inset frame with a subtle edge tint, coordinated matte, retaining the original square childhood photo. Portrait-format photos use cover cropping with individual object positions for the waterfall and snow shots.
 - Three bounded sequences — fan, riffle, and Hindu shuffle — run through the Web Animations API, taking three seconds. Riffle separates two packets, hinges and alternately releases cards before squaring up. Hindu pulls successive packets lengthwise into a receiving stack. All techniques are silent. A shuffled bag plays all three before refilling and prevents consecutive repeats.
-- An intro plays when the image loads. Automatic shuffles start every 10 seconds while the portrait is visible; clicking the portrait or using Enter/Space triggers a shuffle. Overlapping activations are ignored.
-- At Nick’s request, there is no pause button. The “a little sleight of hand” caption remains. Reduced-motion and hidden/offscreen behavior still stop motion.
+- One intro plays when the image loads, then the deck stays still indefinitely. Hero/card pointer entry, movement of at least 12px over the card, clicks, Enter/Space, and Pokemon contact can retrigger it. Hover/movement/collision triggers have a 3.8-second cooldown; in-flight activations are ignored and no replay is queued. Touch uses the button click, not pointer hover.
+- There is no pause button, metaphor caption, or sparkle on the cards. The childhood Joker photo is the initial and reduced-motion default. After each completed shuffle, the face advances through the curated `PORTRAIT_PHOTOS` array: childhood, summer waterfall, mirror photo, snow portrait, autumn waterfall. The four additional JPEGs were supplied by Nick and copied into `public/` without image edits. The actual decoded image nodes are retained; failed or pending loads are skipped. The next photo is staged over the current photo at 20% of the shuffle, when every technique holds the Joker face-down. Its opacity uses the same WAAPI start time as the cards, so it is already present for the final flip. Completion commits that node without a src change; cancellation removes the staged node and retains the previous photo.
 - Shuffle sound has been removed at Nick’s request. No audio context or sound-unlock event listeners are created.
-- Reduced-motion users receive a static portrait with automatic and manual shuffles disabled. Changing the preference cancels any active animation.
-- Hidden tabs and offscreen portraits cancel to the assembled state and clear the timer. Returning starts a fresh 10-second interval, without catch-up animations.
-- Pokemon collisions can trigger a shuffle, with a 10-second cooldown.
-- Animation changes only transforms. The portrait has no continuous animation loop, geometry rebuild, or canvas bitmap allocation.
+- Reduced-motion users receive a static portrait with automatic and manual shuffles disabled. Changing the preference cancels any active animation and restores `/nick-pixel-source.jpg`.
+- Hidden tabs and offscreen portraits cancel to the assembled state. Returning does not trigger a shuffle; only a new interaction can do that. There is no interval or timeout in the portrait module.
+- Animation uses the existing transform and stacking-order keyframes. The portrait has no continuous animation loop, geometry rebuild, or canvas bitmap allocation.
 - `/nick-cutout.webp` is retained as a legacy asset; the Joker uses the untouched original photo.
+
+### Hero copy and typography
+
+The hero has no eyebrow or replacement tagline. The complete “Hello, Nick Here.” line fades in once using Oxanium, with no typing timer, blinking caret, or text glow. The contact link has an aqua underline and no glass fill. The introduction is one sentence about financial models, trading ideas, AI tools, automations, and time to recharge. The two-column layout, futures ticker, and Pokemon remain.
 
 ### Anchor scrolling
 

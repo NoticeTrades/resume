@@ -116,32 +116,26 @@ app.innerHTML = `
                 { rank: 'Q', suit: '♥', color: 'red' },
                 { rank: 'K', suit: '♣', color: 'aqua' },
                 { rank: 'J', suit: '♦', color: 'red' },
-                { rank: 'JOKER', suit: '✦', color: 'aqua' },
+                { rank: 'JOKER', suit: '', color: 'aqua' },
               ].map(({ rank, suit, color }, index) => `
                 <span class="portrait-card${index === 4 ? ' portrait-card--photo' : ''}" style="--card-index: ${index}">
-                  <span class="portrait-card-back"><span class="card-monogram">NT</span><span class="card-suit">♠</span></span>
+                  <span class="portrait-card-back"><span class="card-monogram">NT</span></span>
                   <span class="portrait-card-front card-face--${color}">
                     <span class="card-corner${index === 4 ? ' card-corner--joker' : ''}">${rank}<span>${suit}</span></span>
                     ${index === 4
-                      ? '<span class="joker-photo-frame"><img src="/nick-pixel-source.jpg" alt="" id="portraitSource" /></span><span class="joker-caption">the wild card</span>'
-                      : `<span class="card-face-center"><span>${rank}</span>${suit}</span>`}
+                      ? '<span class="joker-photo-frame"><img src="/nick-pixel-source.jpg" alt="" id="portraitSource" /></span>'
+                      : `<span class="card-face-center">${rank}<span>${suit}</span></span>`}
                     <span class="card-corner card-corner--bottom${index === 4 ? ' card-corner--joker' : ''}">${rank}<span>${suit}</span></span>
                   </span>
                 </span>
               `).join('')}
             </span>
           </button>
-          <div class="portrait-controls">
-            <span aria-hidden="true">a little sleight of hand</span>
-          </div>
         </div>
         <div class="hero-copy">
-          <p class="eyebrow">finance / trading / technology</p>
-          <h1 id="typedIntro" aria-label="Hello, Nick Here."></h1>
+          <h1 class="hero-intro" aria-label="Hello, Nick Here."><span aria-hidden="true"><span class="intro-before">Hello, </span><span class="intro-name">Nick</span><span class="intro-after"> Here.</span><span class="intro-cursor"></span></span></h1>
           <p>
-            Eight hours turning messy business assumptions into useful financial models.
-            Eight hours testing markets, trading ideas, AI tools, and automations.
-            Eight hours recharging for the next iteration.
+            I build financial models for work, then spend probably too much of my free time testing trading ideas and tinkering with AI tools and automations, with some time left to recharge.
           </p>
           <a class="contact-action" href="mailto:nickthomasfx@gmail.com">Contact me</a>
         </div>
@@ -347,41 +341,38 @@ function handleAnimationVisibility() {
 
 document.addEventListener("visibilitychange", handleAnimationVisibility);
 
-const typedIntro = document.getElementById("typedIntro");
-// Segments carry both the typing order and the colour, so the headline wording
-// can change without recalculating character offsets by hand.
-const introSegments = [
-  { text: "Hello, ", tone: "light" },
-  { text: "Nick", tone: "accent" },
-  { text: " Here.", tone: "light" },
+// Keep the accessible heading complete while its visual text types once.
+const headlineMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+const headlineParts = [
+  [document.querySelector('.intro-before'), 'Hello, '],
+  [document.querySelector('.intro-name'), 'Nick'],
+  [document.querySelector('.intro-after'), ' Here.'],
 ];
-const introText = introSegments.map((segment) => segment.text).join("");
-let typedIndex = 0;
-
-function renderTyped(revealedCount) {
-  let remaining = revealedCount;
-  const markup = introSegments
-    .map((segment) => {
-      if (remaining <= 0) return "";
-      const visible = segment.text.slice(0, remaining);
-      remaining -= visible.length;
-      // Non-breaking spaces keep the caret from drifting when a segment ends on
-      // a space mid-type.
-      return `<span class="typed-${segment.tone}">${visible.replaceAll(" ", "&nbsp;")}</span>`;
-    })
-    .join("");
-  typedIntro.innerHTML = `${markup}<span class="type-cursor" aria-hidden="true"></span>`;
-}
-
-function typeHeadline() {
-  renderTyped(typedIndex);
-  typedIndex += 1;
-  if (typedIndex <= introText.length) {
-    setTimeout(typeHeadline, typedIndex === 1 ? 350 : 78);
+let headlineTimer;
+let headlineIndex = 0;
+const headlineLength = headlineParts.reduce((total, [, text]) => total + text.length, 0);
+function paintHeadline(count) {
+  for (const [node, text] of headlineParts) {
+    const length = Math.max(0, Math.min(count, text.length));
+    node.textContent = text.slice(0, length).replaceAll(' ', '\u00a0');
+    count -= text.length;
   }
 }
-
-typeHeadline();
+function typeHeadline() {
+  paintHeadline(++headlineIndex);
+  if (headlineIndex < headlineLength) {
+    headlineTimer = window.setTimeout(typeHeadline, headlineIndex === 6 ? 180 : 80);
+  }
+}
+if (headlineMotion.matches) paintHeadline(headlineLength);
+else {
+  paintHeadline(0);
+  headlineTimer = window.setTimeout(typeHeadline, 250);
+}
+headlineMotion.addEventListener('change', () => {
+  clearTimeout(headlineTimer);
+  paintHeadline(headlineLength);
+});
 
 function renderQuotes(quotes, status = "live") {
   const rows = quotes.map((quote) => {

@@ -92,7 +92,7 @@ Stable handles from this codebase (use these, not coordinates):
 | link name `all notes` | Homepage CTA to `/notes/` |
 | homepage wordmark `#reloadSite` | Button that reloads `/` |
 | interior wordmark `.wordmark` | Link to `/` named `Nicholas Thomas` |
-| `h1[aria-label="Hello, Nick Here."]` | Homepage typed headline |
+| `h1[aria-label="Hello, Nick Here."]` | Homepage headline |
 | button name `Shuffle Nicholas Thomas’s portrait cards` | Hero card deck |
 | button name `Release a random Pokemon` | `#pokeballRelease` |
 | `#pokemonWalker.is-released` | Pokemon is on screen |

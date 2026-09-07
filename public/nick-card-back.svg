@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 389" fill="none">
+  <title>Nick Thomas card back — market tape and registration marks</title>
+  <rect width="280" height="389" rx="16" fill="#0b2233"/>
+  <g stroke="#89bbb2" stroke-width=".75">
+    <path d="M27 14H14v13m239-13h13v13M14 362v13h13m239-13v13h-13"/>
+    <path d="M34 23h212M34 366h212M23 34v321M257 34v321" opacity=".45"/>
+    <path d="M39 59h202M39 83h202M39 107h202M39 131h202M39 258h202M39 282h202M39 306h202M39 330h202" opacity=".14"/>
+    <path d="M45 49v19m8-7h11m10-13v28m-5-17h10m14-3v18m-5-8h10m16-21v32m-5-23h10m18-7v25m-5-8h10m17-18v19m-5-11h10m15 3v22m-5-8h10m17-26v24m-5-16h10m16 0v22m-5-8h10"/>
+    <path d="M45 320v19m8-7h11m10-13v28m-5-17h10m14-3v18m-5-8h10m16-21v32m-5-23h10m18-7v25m-5-8h10m17-18v19m-5-11h10m15 3v22m-5-8h10m17-26v24m-5-16h10m16 0v22m-5-8h10" opacity=".6"/>
+    <path d="M39 103h20m7 0h5m9 0h34m8 0h14m13 0h28m7 0h9m11 0h37M39 286h35m9 0h17m10 0h9m12 0h33m8 0h6m13 0h50" opacity=".6"/>
+    <path d="M60 174v-15h28m104 0h28v15M60 215v15h28m104 0h28v-15"/>
+    <path d="M31 194h11m196 0h11M140 142v-9m0 123v-9"/>
+  </g>
+  <path d="M183 56h10M88 335h10" stroke="#dda396" stroke-width="2"/>
+  <!-- The live Oxanium NT monogram sits here in HTML, sharing the site's font. -->
+</svg>

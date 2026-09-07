@@ -51,8 +51,8 @@ Shared modules to reuse instead of duplicating:
 
 ### Homepage
 
-- Dark navy + aqua visual language, sticky header, market ticker
-- Interactive **poker-card portrait** (Joker portrait, four distinct card faces, three shuffles, 10-second cadence, silent animation)
+- Dark navy + aqua visual language, sticky header, market ticker; Oxanium hero and card ranks, custom market-tape SVG back
+- Interactive **poker-card portrait** (Joker portrait, four distinct card faces, three silent shuffle techniques, one load intro then interaction-only replay)
 - **About me** section with scroll reveal + square photo
 - **Today I Learned** and **Musings** homepage blocks are now **highlights**:
   - Same heading style as About (`section-heading` + rule)
