@@ -9,7 +9,7 @@ export default async function handler(request, response) {
 
   try {
     const payload = await fetchYahooQuotes();
-    response.setHeader("Cache-Control", "s-maxage=5, stale-while-revalidate=15");
+    response.setHeader("Cache-Control", "s-maxage=15, stale-while-revalidate=15");
     response.status(200).json(payload);
   } catch (error) {
     response.status(502).json({

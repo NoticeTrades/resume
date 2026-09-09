@@ -1,64 +1,56 @@
-const yahooContracts = [
-  { symbol: "NQ", yahooSymbol: "NQ=F" },
-  { symbol: "ES", yahooSymbol: "ES=F" },
-  { symbol: "YM", yahooSymbol: "YM=F" },
-  { symbol: "RTY", yahooSymbol: "RTY=F" },
+const contracts = [
+  ['NQ', 'NQ=F'], ['ES', 'ES=F'], ['YM', 'YM=F'], ['RTY', 'RTY=F'],
+  ['BTC', 'BTC-USD'], ['ETH', 'ETH-USD'], ['FTSE', '^FTSE'], ['NIKKEI', '^N225'],
 ];
 
-async function fetchYahooContract({ symbol, yahooSymbol }) {
-  const endpoint = new URL(
-    `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(yahooSymbol)}`
-  );
-  endpoint.searchParams.set("interval", "1m");
-  endpoint.searchParams.set("range", "1d");
-
-  const response = await fetch(endpoint, {
-    headers: {
-      Accept: "application/json",
-      "User-Agent": "Mozilla/5.0 (compatible; NicholasThomasPortfolio/1.0)",
-    },
-    signal: AbortSignal.timeout(8000),
-  });
-
-  if (!response.ok) {
-    throw new Error(`Yahoo returned ${response.status} for ${yahooSymbol}`);
+// Coalesce requests per warm instance. A failed symbol never erases its peers.
+export function createQuoteService(fetchImpl = (...args) => fetch(...args), now = Date.now) {
+  const last = new Map();
+  let pending;
+  let cached;
+  let expires = 0;
+  async function quote([symbol, yahooSymbol]) {
+    const url = new URL(`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(yahooSymbol)}`);
+    url.searchParams.set('interval', '1m');
+    url.searchParams.set('range', '1d');
+    const response = await fetchImpl(url, {
+      headers: { Accept: 'application/json', 'User-Agent': 'Mozilla/5.0' },
+      signal: AbortSignal.timeout(6500),
+    });
+    if (!response.ok) throw new Error('Quote unavailable');
+    const payload = await response.json();
+    const meta = payload.chart?.result?.[0]?.meta;
+    const price = meta?.regularMarketPrice;
+    const previousClose = meta?.chartPreviousClose ?? meta?.previousClose;
+    if (payload.chart?.error || !Number.isFinite(price) || price <= 0 || !Number.isFinite(previousClose) || previousClose <= 0) throw new Error('Invalid quote');
+    const result = {
+      symbol, price, change: price - previousClose,
+      changePercent: (price - previousClose) / previousClose * 100,
+      marketTime: Number.isFinite(meta.regularMarketTime) ? meta.regularMarketTime * 1000 : null,
+      fetchedAt: now(), provider: 'Yahoo Finance', status: 'delayed',
+    };
+    last.set(symbol, result);
+    return result;
   }
-
-  const payload = await response.json();
-  const result = payload.chart?.result?.[0];
-  const meta = result?.meta;
-
-  if (!meta || payload.chart?.error) {
-    throw new Error(`Yahoo returned no quote for ${yahooSymbol}`);
-  }
-
-  const closes = result.indicators?.quote?.[0]?.close ?? [];
-  const latestClose = [...closes].reverse().find(Number.isFinite);
-  const price = Number(meta.regularMarketPrice ?? latestClose);
-  const previousClose = Number(meta.chartPreviousClose ?? meta.previousClose);
-
-  if (!Number.isFinite(price) || !Number.isFinite(previousClose)) {
-    throw new Error(`Yahoo returned an incomplete quote for ${yahooSymbol}`);
-  }
-
-  const change = price - previousClose;
-
-  return {
-    symbol,
-    price,
-    change,
-    changePercent: previousClose ? (change / previousClose) * 100 : 0,
-    marketTime: meta.regularMarketTime ? meta.regularMarketTime * 1000 : null,
+  return async function fetchQuotes() {
+    if (cached && now() < expires) return cached;
+    if (pending) return pending;
+    pending = (async () => {
+      const results = await Promise.allSettled(contracts.map(quote));
+      const quotes = results.map((result, index) => {
+        if (result.status === 'fulfilled') return result.value;
+        const symbol = contracts[index][0];
+        const previous = last.get(symbol);
+        return previous && now() - previous.fetchedAt < 86400000
+          ? { ...previous, status: 'stale' }
+          : { symbol, price: null, status: 'unavailable' };
+      });
+      cached = { quotes, fetchedAt: now(), provider: 'Yahoo Finance', status: 'delayed' };
+      expires = now() + 15000;
+      return cached;
+    })();
+    try { return await pending; } finally { pending = null; }
   };
 }
 
-export async function fetchYahooQuotes() {
-  const quotes = await Promise.all(yahooContracts.map(fetchYahooContract));
-
-  return {
-    quotes,
-    provider: "Yahoo Finance",
-    status: "Yahoo delayed",
-    fetchedAt: Date.now(),
-  };
-}
+export const fetchYahooQuotes = createQuoteService();

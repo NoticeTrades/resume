@@ -22,8 +22,8 @@ export function initializeRevealAnimations(root = document) {
 }
 
 // The header is sticky, so anchor targets land underneath it. Its height is
-// measured rather than hardcoded because the header wraps to two rows below 900px
-// and three below 560px, which no single CSS value covers.
+// measured rather than hardcoded: the mobile homepage includes a ticker row,
+// while interior pages use a compact single-row header.
 export function syncHeaderOffset(header = document.querySelector(".site-header")) {
   if (!header) return () => {};
 

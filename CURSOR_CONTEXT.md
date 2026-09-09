@@ -1,6 +1,6 @@
 # Cursor Project Context — Nicholas Thomas Portfolio
 
-Last updated: September 7, 2026
+Last updated: September 8, 2026
 
 Read this file before making changes. It summarizes the current architecture, working features, content workflow, and important implementation decisions.
 
@@ -78,7 +78,7 @@ Vite uses `vite.config.js` to build four HTML entry points. During local develop
 - Random released Pokemon that can move and be dragged
 - Scrolling futures ticker for NQ, ES, YM, and RTY
 
-The ticker calls `/api/market-data` immediately and every eight seconds while the page is visible. The serverless endpoint queries Yahoo Finance and returns delayed data. Its Vercel cache is five seconds with stale-while-revalidate enabled. The UI falls back to demo values when the feed is unavailable.
+The ticker uses `src/lib/marketTicker.js`. It shows NQ, ES, YM, RTY, BTC, ETH, FTSE 100 and Nikkei 225. BTC/USD and ETH/USD receive trade-triggered updates from Kraken's unauthenticated v2 WebSocket; DOM paints are limited to four per second. `/api/market-data` is refreshed every 15 seconds while visible and provides Yahoo delayed quotes for all eight symbols (including crypto fallback). Server requests are coalesced and cached for 15 seconds per warm instance, with a 15-second Vercel edge cache. Each symbol fails independently, retaining its last valid quote as stale. No demo prices are shown: initial labels render immediately, unavailable prices show an em dash and offline status, and the optional local cache retains genuine prices for up to 24 hours. Two equal fixed-width groups scroll seamlessly; price changes update text nodes without replacing the track. Hidden pages pause networking/animation; resuming reconnects the stream and refreshes quotes. Reconnects back off to 30 seconds and a stalled socket is replaced after 45 seconds without messages. Provider, change basis, and quote timestamps are available in each item's title. Yahoo's exchange delays cannot be removed by polling faster.
 
 ### Card portrait
 
@@ -100,7 +100,16 @@ The hero has no eyebrow or replacement tagline. The accessible “Hello, Nick He
 
 ### Anchor scrolling
 
-`html` carries `scroll-padding-top: calc(var(--header-height) + 26px)` so header links such as About land with the section heading visible instead of tucked under the sticky header. `--header-height` is measured by `syncHeaderOffset()` rather than hardcoded, because the header wraps to two rows below 900px and three below 560px, growing from 60px to roughly 196px.
+`html` carries `scroll-padding-top: calc(var(--header-height) + 26px)` so header links such as About land with the section heading visible instead of tucked under the sticky header. `--header-height` is measured by `syncHeaderOffset()` rather than hardcoded. The mobile homepage includes a slim ticker row; interior pages use one compact row.
+
+### Mobile navigation (September 8, local preview)
+
+- `src/lib/mobileNav.js` and `src/mobileNav.css` provide the same right-side drawer on all four pages at 900px and below. The existing navigation and social-link nodes move into a native modal dialog; desktop restores those same nodes to their original positions. The Pokeball stays in the header and the homepage ticker stays visible.
+- The drawer uses a short transform animation, 44px controls, large navigation rows, current-page indication, safe-area padding and a scrollable panel for short screens. Escape, the close button and backdrop dismiss it; following an anchor restores page scrolling before navigation. Keyboard focus stays in the dialog and returns to the trigger on dismissal. Reduced motion skips the slide. Cleanup handles interior-page rerenders and crossing the desktop breakpoint.
+- Drawer links use 20px labels and decorative spade-card marks in Nick's corrected order: Home A, About 2, Musings 3, Library 4, TIL 5. These marks are hidden on desktop and from assistive technology. Links enter one by one with 65ms staggered delays after the drawer starts opening; reduced motion skips all entrance effects, and closing cleans up pending effects.
+- `src/homeRefinements.css` makes the homepage more compact through component sizes and spacing, never CSS/browser zoom: desktop portrait 245px, mobile portrait up to 194px, smaller headline/body text and reduced hero height. Nick confirmed the smaller version feels better on iPhone, then requested more space around the portrait: mobile/tablet hero now uses 28px top inset and a 44px portrait-to-copy gap. At 901–1199px the ticker occupies its own header row to prevent horizontal overflow; wider desktop placement stays the same. The ticker uses fine separators rather than nested pill backgrounds. X links on homepage and interior headers point to `https://x.com/nickonfinance`.
+- Card audio now requests `navigator.audioSession.type = 'playback'` during trusted gesture unlock when available. WebKit documents this for iOS 17+ to play through media volume with the Ring/Silent switch on. Unsupported or rejected session settings fall back to the existing audio behavior. The intro remains silent. Nick tested the September 8 same-Wi-Fi preview on physical iPhone Safari with the bell muted and reported that sound plays and the side button looks good. Device model/iOS version were not supplied.
+- September 7 changes were pushed to `main` as `894fbb2`. September 8 menu/audio-session changes are local only until Nick requests another push.
 
 The anchored sections deliberately do not carry `reveal-on-scroll` themselves; their heading blocks do. While a section held the class, its `translateY(34px)` shifted the element the browser was scrolling to, so the jump overshot by that amount on top of the header overlap.
 
@@ -195,6 +204,7 @@ These are configured in Sanity Manage under the project's API settings, not in t
 ## Shared frontend modules
 
 - `src/lib/siteChrome.js`: shared interior-page header, footer, navigation, social links, and Pokeball markup
+- `src/lib/mobileNav.js`: shared responsive menu, modal interaction and desktop restoration
 - `src/lib/cardAudio.js`: normalized card recordings, gesture unlock, scheduled cue playback and cancellation
 - `src/lib/cardPortrait.js`: homepage card portrait choreography, exposing `disturb()`, `scatterFrom()`, `resume()`, and `pause()`
 - `src/lib/pokemonRelease.js`: Pokemon release, drag, wall bounce, and text-obstacle collisions for every page

@@ -1,28 +1,17 @@
 ﻿import "./style.css";
 import "./writing.css";
+import "./homeRefinements.css";
+import { initializeMarketTicker } from "./lib/marketTicker.js";
 import { initializeIndexPointer, initializeNavPrefetch, readCache, writeCache } from "./lib/pageData.js";
 import { initializePokemonRelease } from "./lib/pokemonRelease.js";
 import { createCardPortrait } from "./lib/cardPortrait.js";
 import { syncHeaderOffset } from "./lib/pageUi.js";
+import { initializeMobileNav } from "./lib/mobileNav.js";
 import {
   escapeHtml,
   loadLearningNotes,
   loadPublishedArticles,
 } from "./lib/sanity.js";
-
-const marketSymbols = [
-  { symbol: "NQ", name: "Nasdaq" },
-  { symbol: "ES", name: "S&P 500" },
-  { symbol: "YM", name: "Dow" },
-  { symbol: "RTY", name: "Russell" },
-];
-
-const demoQuotes = [
-  { symbol: "NQ", price: 23785.25, change: 42.5, changePercent: 0.18 },
-  { symbol: "ES", price: 6512.75, change: 8.25, changePercent: 0.13 },
-  { symbol: "YM", price: 45864, change: -31, changePercent: -0.07 },
-  { symbol: "RTY", price: 2284.6, change: 4.2, changePercent: 0.18 },
-];
 
 const app = document.querySelector("#app");
 function selectHighlights(source) {
@@ -80,7 +69,7 @@ app.innerHTML = `
         <a href="/notes/">TIL</a>
       </nav>
     </div>
-    <div class="market-strip" aria-label="Futures market prices">
+    <div class="market-strip" aria-label="Market prices">
       <div class="ticker-track" id="tickerTrack"></div>
     </div>
     <div class="social-icons" aria-label="Social links">
@@ -90,7 +79,7 @@ app.innerHTML = `
       <a href="https://www.youtube.com/@NickSpeaksFinance" target="_blank" rel="noreferrer" aria-label="YouTube">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21.62 7.3a3 3 0 0 0-2.11-2.12C17.65 4.68 12 4.68 12 4.68s-5.65 0-7.51.5A3 3 0 0 0 2.38 7.3 31.24 31.24 0 0 0 1.88 12c0 1.64.17 3.28.5 4.7a3 3 0 0 0 2.11 2.12c1.86.5 7.51.5 7.51.5s5.65 0 7.51-.5a3 3 0 0 0 2.11-2.12c.33-1.42.5-3.06.5-4.7s-.17-3.28-.5-4.7ZM9.98 15.55v-7.1L15.9 12l-5.92 3.55Z"/></svg>
       </a>
-      <a href="https://x.com/noticetrades" target="_blank" rel="noreferrer" aria-label="X">
+      <a href="https://x.com/nickonfinance" target="_blank" rel="noreferrer" aria-label="X">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.42 10.27 22.13 1.3h-1.83l-6.7 7.8-5.35-7.8H2.08l8.08 11.77-8.08 9.4h1.83l7.06-8.22 5.64 8.22h6.17l-8.36-12.2Zm-2.5 2.9-.82-1.17L4.6 2.68h2.77l5.26 7.53.82 1.17 6.84 9.8h-2.77l-5.6-8.01Z"/></svg>
       </a>
       <a href="mailto:nickthomasfx@gmail.com" aria-label="Email Nicholas Thomas">
@@ -214,7 +203,7 @@ app.innerHTML = `
 `;
 
 const tickerTrack = document.getElementById("tickerTrack");
-const marketDataEndpoint = import.meta.env.VITE_MARKET_DATA_ENDPOINT || "/api/market-data";
+initializeMarketTicker(tickerTrack, import.meta.env.VITE_MARKET_DATA_ENDPOINT || "/api/market-data");
 
 document.getElementById("reloadSite").addEventListener("click", () => {
   window.location.reload();
@@ -228,6 +217,7 @@ const cardPortrait = createCardPortrait({
   shell: portraitShell,
 });
 
+initializeMobileNav();
 syncHeaderOffset();
 
 const revealItems = document.querySelectorAll(".reveal-on-scroll");
@@ -372,65 +362,4 @@ else {
 headlineMotion.addEventListener('change', () => {
   clearTimeout(headlineTimer);
   paintHeadline(headlineLength);
-});
-
-function renderQuotes(quotes, status = "live") {
-  const rows = quotes.map((quote) => {
-    const change = Number(quote.change ?? 0);
-    const changePercent = Number(quote.changePercent ?? quote.percent ?? 0);
-    const direction = change >= 0 ? "up" : "down";
-    const sign = change >= 0 ? "+" : "";
-    return `
-      <span class="ticker-item ${direction}">
-        <strong>${quote.symbol}</strong>
-        <span>${formatPrice(quote.price ?? quote.last ?? quote.value)}</span>
-        <em>${sign}${change.toFixed(2)} / ${sign}${changePercent.toFixed(2)}%</em>
-      </span>
-    `;
-  });
-  tickerTrack.innerHTML = [...rows, ...rows].join("") + `<span class="ticker-status">${status}</span>`;
-}
-
-function formatPrice(value) {
-  const number = Number(value);
-  if (!Number.isFinite(number)) return "--";
-  return new Intl.NumberFormat("en-US", {
-    minimumFractionDigits: number > 10000 ? 0 : 2,
-    maximumFractionDigits: 2,
-  }).format(number);
-}
-
-async function fetchQuotes() {
-  try {
-    const response = await fetch(marketDataEndpoint, { cache: "no-store" });
-    if (!response.ok) throw new Error(`Quote endpoint returned ${response.status}`);
-    const payload = await response.json();
-    const quotes = normalizeQuotes(payload);
-    renderQuotes(quotes, payload.status ?? "Yahoo delayed");
-  } catch {
-    renderQuotes(demoQuotes, "feed offline");
-  }
-}
-
-function normalizeQuotes(payload) {
-  const source = Array.isArray(payload) ? payload : payload.quotes ?? payload.data ?? [];
-  const bySymbol = new Map(source.map((quote) => [quote.symbol, quote]));
-  return marketSymbols.map(({ symbol }) => {
-    const quote = bySymbol.get(symbol) ?? {};
-    return {
-      symbol,
-      price: quote.price ?? quote.last ?? quote.value,
-      change: quote.change ?? quote.netChange ?? 0,
-      changePercent: quote.changePercent ?? quote.percent ?? 0,
-    };
-  });
-}
-
-fetchQuotes();
-setInterval(() => {
-  if (!document.hidden) fetchQuotes();
-}, 8000);
-
-document.addEventListener("visibilitychange", () => {
-  if (!document.hidden) fetchQuotes();
 });

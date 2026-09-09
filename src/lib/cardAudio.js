@@ -29,6 +29,11 @@ export function createCardAudio() {
   function unlock() {
     // Must be invoked synchronously by a real input handler on iOS Safari.
     // Retry after interruption; never start playback merely on resume.
+    // iOS 17+ routes playback sessions through media volume, including when
+    // the Ring/Silent switch is silent. Older browsers retain their default.
+    try {
+      if (window.navigator?.audioSession) window.navigator.audioSession.type = 'playback';
+    } catch { /* Unsupported session policy must not prevent gesture unlock. */ }
     unlocked = true;
     if (context.state !== 'running') {
       try { resuming = context.resume().catch(() => {}); }

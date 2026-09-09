@@ -1,6 +1,7 @@
 import { initializeIndexPointer, initializeNavPrefetch } from "./pageData.js";
 import { initializePokemonRelease } from "./pokemonRelease.js";
 import { syncHeaderOffset } from "./pageUi.js";
+import { initializeMobileNav } from "./mobileNav.js";
 
 function navLink(href, label, activePath) {
   const current = href === activePath ? ' aria-current="page"' : "";
@@ -27,7 +28,7 @@ export function renderInteriorHeader(activePath) {
         <a href="https://www.youtube.com/@NickSpeaksFinance" target="_blank" rel="noreferrer" aria-label="YouTube">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21.62 7.3a3 3 0 0 0-2.11-2.12C17.65 4.68 12 4.68 12 4.68s-5.65 0-7.51.5A3 3 0 0 0 2.38 7.3 31.24 31.24 0 0 0 1.88 12c0 1.64.17 3.28.5 4.7a3 3 0 0 0 2.11 2.12c1.86.5 7.51.5 7.51.5s5.65 0 7.51-.5a3 3 0 0 0 2.11-2.12c.33-1.42.5-3.06.5-4.7s-.17-3.28-.5-4.7ZM9.98 15.55v-7.1L15.9 12l-5.92 3.55Z"/></svg>
         </a>
-        <a href="https://x.com/noticetrades" target="_blank" rel="noreferrer" aria-label="X">
+        <a href="https://x.com/nickonfinance" target="_blank" rel="noreferrer" aria-label="X">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.42 10.27 22.13 1.3h-1.83l-6.7 7.8-5.35-7.8H2.08l8.08 11.77-8.08 9.4h1.83l7.06-8.22 5.64 8.22h6.17l-8.36-12.2Zm-2.5 2.9-.82-1.17L4.6 2.68h2.77l5.26 7.53.82 1.17 6.84 9.8h-2.77l-5.6-8.01Z"/></svg>
         </a>
         <a href="mailto:nickthomasfx@gmail.com" aria-label="Email Nicholas Thomas">
@@ -53,12 +54,14 @@ export function renderSiteFooter() {
 }
 
 export function initializeInteriorChrome() {
+  const stopMobileNav = initializeMobileNav();
   const stopHeaderSync = syncHeaderOffset();
   const stopPokemon = initializePokemonRelease();
   const stopPointer = initializeIndexPointer();
   initializeNavPrefetch();
 
   return () => {
+    stopMobileNav();
     stopHeaderSync();
     stopPokemon?.();
     stopPointer?.();

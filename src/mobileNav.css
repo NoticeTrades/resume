@@ -1,0 +1,124 @@
+.menu-toggle { display: none; }
+.nav-card { display: none; }
+
+.mobile-menu {
+  position: fixed;
+  inset: 0 0 0 auto;
+  width: min(360px, calc(100% - 28px));
+  max-width: none;
+  height: 100%;
+  height: 100dvh;
+  max-height: none;
+  margin: 0;
+  padding: max(18px, env(safe-area-inset-top)) 26px max(28px, env(safe-area-inset-bottom));
+  border: 0;
+  border-left: 1px solid var(--line);
+  background: var(--bg);
+  color: var(--text);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.mobile-menu[open] { display: flex; flex-direction: column; }
+.mobile-menu::backdrop { background: rgba(2, 9, 20, .65); }
+.mobile-menu-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.mobile-menu-top > span,
+.mobile-menu-footer > span {
+  font: 500 11px Sora, sans-serif;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.menu-close {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text);
+  font: 300 30px/1 Sora, sans-serif;
+  cursor: pointer;
+}
+.site-header .mobile-menu nav {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
+  width: 100%;
+  margin: 34px 0;
+}
+.site-header .mobile-menu nav a {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 60px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 20px;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.site-header .mobile-menu nav a::after { display: none; }
+.mobile-menu .nav-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 27px;
+  height: 36px;
+  border: 1px solid rgba(148, 169, 209, .35);
+  border-radius: 4px;
+  font: 500 12px/1.1 Oxanium, sans-serif;
+  color: var(--muted);
+  transition: transform .2s ease, color .2s ease, border-color .2s ease;
+}
+.mobile-menu .nav-card > span:last-child { font: 14px/1.1 Georgia, serif; }
+.mobile-menu a[aria-current='page'] .nav-card { border-color: var(--aqua); color: var(--aqua); }
+.mobile-menu a:hover .nav-card,
+.mobile-menu a:focus-visible .nav-card { transform: rotate(-8deg); color: var(--aqua); border-color: var(--aqua); }
+.mobile-menu-footer { margin-top: auto; padding-top: 16px; }
+.site-header .mobile-menu .social-icons { width: auto; margin: 16px 0 0; gap: 12px; justify-content: flex-start; }
+.site-header .mobile-menu .social-icons a { width: 44px; height: 44px; }
+.menu-toggle:focus-visible,
+.menu-close:focus-visible,
+.mobile-menu a:focus-visible { outline: 2px solid var(--aqua); outline-offset: 5px; }
+
+@media (max-width: 900px) {
+  .site-header.has-mobile-menu {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 44px 44px;
+    align-items: center;
+    gap: 8px;
+    min-height: 68px;
+    padding: 10px 16px;
+  }
+  .site-header.has-mobile-menu .header-left { min-width: 0; width: auto; display: block; }
+  .site-header.has-mobile-menu .wordmark { font-size: clamp(14px, 3.8vw, 20px); white-space: nowrap; }
+  .site-header.has-mobile-menu > .social-icons { grid-column: 2; grid-row: 1; min-width: 0; width: auto; margin: 0; }
+  .site-header.has-mobile-menu > .social-icons .pokeball-release { width: 44px; height: 44px; }
+  .site-header.has-mobile-menu .menu-toggle {
+    grid-column: 3;
+    grid-row: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: transparent;
+    color: var(--aqua);
+    cursor: pointer;
+  }
+  .menu-toggle span { width: 20px; height: 1.5px; background: currentColor; }
+  .menu-toggle span:last-child { width: 14px; margin-left: 6px; }
+  .site-header.has-mobile-menu > .market-strip { grid-column: 1 / -1; grid-row: 2; width: 100%; min-width: 0; }
+  .site-header.has-mobile-menu .ticker-track { min-height: 28px; }
+}

@@ -4,7 +4,7 @@ import vm from 'node:vm';
 import { readFile } from 'node:fs/promises';
 const code = (await readFile(new URL('../src/lib/cardAudio.js', import.meta.url), 'utf8')).replace('export function', 'function');
 const flush = () => new Promise(resolve => setImmediate(resolve));
-function setup({ failed = false, pending = false } = {}) {
+function setup({ failed = false, pending = false, audioSession } = {}) {
   const nodes = [];
   const requests = [];
   const waiting = [];
@@ -23,7 +23,7 @@ function setup({ failed = false, pending = false } = {}) {
       nodes.push(node); return node;
     }
   }
-  const sandbox = vm.createContext({ window: { AudioContext }, document, fetch: (src) => {
+  const sandbox = vm.createContext({ window: { AudioContext, navigator: { audioSession } }, document, fetch: (src) => {
     requests.push(src);
     const response = { ok: !failed, arrayBuffer: () => Promise.resolve(src) };
     return pending ? new Promise(resolve => waiting.push(() => resolve(response))) : Promise.resolve(response);
@@ -51,6 +51,22 @@ test('intro stays silent; mapped clips are scheduled at their choreography cues'
     assert.equal(node.offset, 0);
   }
   assert.ok(h.nodes.slice(0, -1).every(node => node.stopped));
+});
+
+test('gesture selects the iOS playback session; unsupported policies still unlock', async () => {
+  const audioSession = { type: 'auto' };
+  const h = setup({ audioSession });
+  await flush();
+  assert.equal(audioSession.type, 'auto');
+  h.audio.unlock();
+  assert.equal(audioSession.type, 'playback');
+  assert.equal(h.nodes.length, 0);
+  const blocked = setup({ audioSession: { set type(value) { throw new Error('Unsupported'); } } });
+  await flush();
+  blocked.audio.unlock();
+  blocked.audio.play(0, 1000);
+  await flush();
+  assert.equal(blocked.nodes.length, 1);
 });
 
 test('scheduled and playing audio stop when the shuffle cancels', async () => {
