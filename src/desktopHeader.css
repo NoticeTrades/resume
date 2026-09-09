@@ -1,0 +1,43 @@
+.desktop-header-space { display: contents; }
+@media (min-width: 901px) {
+  .desktop-header-space {
+    display: block;
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    height: var(--expanded-header-height, 60px);
+    pointer-events: none;
+  }
+  .desktop-header-space > .site-header {
+    position: relative;
+    pointer-events: auto;
+    transition: min-height 320ms cubic-bezier(.22, 1, .36, 1),
+      padding 320ms cubic-bezier(.22, 1, .36, 1),
+      background-color 320ms ease, box-shadow 320ms ease;
+  }
+  .desktop-scroll-header .wordmark {
+    transform-origin: left center;
+    transition: transform 320ms cubic-bezier(.22, 1, .36, 1);
+  }
+  .desktop-scroll-header .pokeball-release {
+    transition: width 320ms cubic-bezier(.22, 1, .36, 1), height 320ms cubic-bezier(.22, 1, .36, 1);
+  }
+  .site-header.desktop-scroll-header .ticker-track {
+    transition: min-height 320ms cubic-bezier(.22, 1, .36, 1);
+  }
+  .site-header.desktop-scroll-header.is-compact {
+    min-height: 44px;
+    padding-block: 0;
+    background-color: rgba(7, 23, 43, .96);
+    box-shadow: 0 4px 18px rgba(0, 0, 0, .12);
+  }
+  .desktop-scroll-header.is-compact .wordmark { transform: scale(.86); }
+  .site-header.desktop-scroll-header.is-compact .pokeball-release { width: 38px; height: 38px; }
+  .site-header.desktop-scroll-header.is-compact .ticker-track { min-height: 26px; }
+  .site-header.header-measuring,
+  .site-header.header-measuring * { transition: none !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .site-header.desktop-scroll-header,
+  .site-header.desktop-scroll-header * { transition: none !important; }
+}

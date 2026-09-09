@@ -1,3 +1,5 @@
+import { initializeDesktopHeader } from './desktopHeader.js';
+
 export function initializeRevealAnimations(root = document) {
   const items = root.querySelectorAll(".reveal-on-scroll");
 
@@ -26,6 +28,7 @@ export function initializeRevealAnimations(root = document) {
 // while interior pages use a compact single-row header.
 export function syncHeaderOffset(header = document.querySelector(".site-header")) {
   if (!header) return () => {};
+  const stopDesktopHeader = initializeDesktopHeader(header);
 
   const apply = () => {
     const height = Math.round(header.getBoundingClientRect().height);
@@ -36,12 +39,12 @@ export function syncHeaderOffset(header = document.querySelector(".site-header")
 
   if (!("ResizeObserver" in window)) {
     window.addEventListener("resize", apply);
-    return () => window.removeEventListener("resize", apply);
+    return () => { window.removeEventListener("resize", apply); stopDesktopHeader(); };
   }
 
   const observer = new ResizeObserver(apply);
   observer.observe(header);
-  return () => observer.disconnect();
+  return () => { observer.disconnect(); stopDesktopHeader(); };
 }
 
 export function getRouteSlug(section, queryName = "slug") {

@@ -100,6 +100,10 @@ The hero has no eyebrow or replacement tagline. The accessible “Hello, Nick He
 
 ### Anchor scrolling
 
+Desktop headers (901px+) now use `src/lib/desktopHeader.js` and `src/desktopHeader.css`, initialized through `syncHeaderOffset()`. After passing 80px from the top, 18px of downward travel contracts the bar; 12px upward expands it, with small reversals ignored to prevent flicker. The wide desktop bar transitions from 60px to 44px over 320ms, keeping navigation and ticker available. A sticky wrapper reserves the expanded height so changing header size never moves document content or produces artificial direction changes. Keyboard focus expands the bar; resize/top-of-page resets it. Mobile uses a `display: contents` wrapper and retains its existing header. Reduced motion skips transitions. These scroll-header changes are local and not included in the previously pushed `b7edb4b`.
+
+Ticker alignment refinement: quotes use identical 204px grids (symbol, right-aligned two-decimal price, right-aligned percentage) with fine separators. Normal live/delayed labels are no longer repeated visually; status remains in the quote title and accessible text. Stale/offline/loading states replace the percentage visibly when needed. The two duplicated groups retain equal widths and update in place.
+
 `html` carries `scroll-padding-top: calc(var(--header-height) + 26px)` so header links such as About land with the section heading visible instead of tucked under the sticky header. `--header-height` is measured by `syncHeaderOffset()` rather than hardcoded. The mobile homepage includes a slim ticker row; interior pages use one compact row.
 
 ### Mobile navigation (September 8, local preview)

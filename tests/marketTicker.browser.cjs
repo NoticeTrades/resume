@@ -20,14 +20,14 @@ const fs = require('node:fs/promises');
       const first = page.locator('.ticker-group').first();
       assert.equal(await first.locator('.ticker-item').count(), 8);
       assert.equal(await first.locator('[data-symbol=NQ] small').textContent(), 'loading');
-      await page.waitForFunction(() => document.querySelector('[data-symbol=NQ] .ticker-price').textContent === '12,345');
+      await page.waitForFunction(() => document.querySelector('[data-symbol=NQ] .ticker-price').textContent === '12,345.00');
       await page.waitForFunction(() => document.querySelector('[data-symbol=BTC] small').textContent === 'live');
       assert.equal(await first.locator('[data-symbol=ETH] small').textContent(), 'offline');
       await page.evaluate(() => { window.originalTicker = document.querySelector('[data-symbol=NQ]'); });
       mode = 'offline';
       await page.evaluate(() => window.dispatchEvent(new Event('online')));
       await page.waitForFunction(() => document.querySelector('[data-symbol=NQ] small').textContent === 'stale');
-      assert.equal(await first.locator('[data-symbol=NQ] .ticker-price').textContent(), '12,345');
+      assert.equal(await first.locator('[data-symbol=NQ] .ticker-price').textContent(), '12,345.00');
       assert.ok(await page.evaluate(() => window.originalTicker === document.querySelector('[data-symbol=NQ]')));
       const widths = await page.locator('.ticker-group').evaluateAll(groups => groups.map(group => group.getBoundingClientRect().width));
       assert.ok(Math.abs(widths[0] - widths[1]) < 0.01);
@@ -61,7 +61,7 @@ const fs = require('node:fs/promises');
       assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
       await page.reload();
       await page.waitForFunction(() => document.querySelector('[data-symbol=NQ] small').textContent === 'stale');
-      assert.equal(await page.locator('[data-symbol=NQ] .ticker-price').first().textContent(), '12,345');
+      assert.equal(await page.locator('[data-symbol=NQ] .ticker-price').first().textContent(), '12,345.00');
       console.log(`PASS ${engine.name()}: initial labels, partial quotes, stream, offline retention, cache reload, stable DOM, seamless loop, stagger, desktop`);
     } finally { await browser.close(); }
   }

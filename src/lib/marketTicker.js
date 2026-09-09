@@ -1,7 +1,7 @@
 const SYMBOLS = ['NQ', 'ES', 'YM', 'RTY', 'BTC', 'ETH', 'FTSE', 'NIKKEI'];
 const CACHE_KEY = 'nt-market-v2';
 const valid = quote => quote && Number.isFinite(quote.price) && quote.price > 0;
-const priceFormat = new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 });
+const priceFormat = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 export function initializeMarketTicker(track, endpoint = '/api/market-data') {
   if (!track) return () => {};
@@ -39,9 +39,9 @@ export function initializeMarketTicker(track, endpoint = '/api/market-data') {
       const quote = prices.get(item.dataset.symbol);
       const available = valid(quote);
       const stale = available && (quote.status === 'stale' || Date.now() - quote.fetchedAt > 90000);
-      item.className = `ticker-item ${stale ? 'is-stale' : ''} ${available && quote.changePercent < 0 ? 'down' : 'up'}`;
+      item.className = `ticker-item ${stale ? 'is-stale' : ''} ${!available ? 'is-unavailable' : ''} ${available && quote.changePercent < 0 ? 'down' : 'up'}`;
       item.querySelector('.ticker-price').textContent = available ? priceFormat.format(quote.price) : '—';
-      item.querySelector('em').textContent = available && Number.isFinite(quote.changePercent) ? `${quote.changePercent >= 0 ? '+' : ''}${quote.changePercent.toFixed(2)}%` : '';
+      item.querySelector('em').textContent = stale ? 'stale' : !available ? (attempted ? 'offline' : 'loading') : Number.isFinite(quote.changePercent) ? `${quote.changePercent >= 0 ? '+' : ''}${quote.changePercent.toFixed(2)}%` : '—';
       item.querySelector('small').textContent = available ? (stale ? 'stale' : quote.status) : (attempted ? 'offline' : 'loading');
       item.title = available ? `${quote.symbol} · ${quote.provider} · ${stale ? 'last known price' : quote.status} · ${quote.status === 'live' ? '24-hour change' : 'change from previous close'}${quote.marketTime ? ' · Quote time ' + new Date(quote.marketTime).toLocaleString() : ''}` : `${item.dataset.symbol}: price temporarily unavailable`;
     }
