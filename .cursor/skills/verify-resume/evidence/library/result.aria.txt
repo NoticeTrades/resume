@@ -1,5 +1,5 @@
-title: Learning Library | Nicholas Thomas
-url: http://127.0.0.1:5173/library/
+title: The Machine Stops — Learning Library | Nicholas Thomas
+url: http://127.0.0.1:5173/library/the-machine-stops
 
 link: Nicholas Thomas
 navigation: Main navigation
@@ -8,11 +8,19 @@ navigation: Main navigation
   link: Musings
   link: Library
   link: TIL
-link: LinkedIn
-link: YouTube
-link: X
-link: Email Nicholas Thomas
-button: Release a random Pokemon
-heading h1: library
-link: The Machine Stops E.M. Forster Completed
-link: Thinking, Fast and Slow Daniel Kahneman Completed
+region: Social links
+  link: LinkedIn
+  link: YouTube
+  link: X
+  link: Email Nicholas Thomas
+  button: Release a random Pokemon
+button: Open menu
+button: Close menu
+region: Social links
+link: ← Learning Library
+heading h1: The Machine Stops
+progressbar: Learning progress
+region: Rated 4 out of 5
+link: Open resource
+heading h2: My thoughts
+heading h2: Notes From This Resource

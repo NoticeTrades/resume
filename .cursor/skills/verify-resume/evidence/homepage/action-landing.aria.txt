@@ -1,5 +1,5 @@
 title: Nicholas Thomas
-url: http://127.0.0.1:5173/
+url: http://127.0.0.1:5173/#about
 
 button: Nicholas Thomas
 navigation: Main navigation
@@ -8,18 +8,27 @@ navigation: Main navigation
   link: Musings
   link: Library
   link: TIL
-link: LinkedIn
-link: YouTube
-link: X
-link: Email Nicholas Thomas
-button: Release a random Pokemon
-button: Scatter the puzzle portrait and let it rebuild itself
+region: Market prices
+region: Social links
+  link: LinkedIn
+  link: YouTube
+  link: X
+  link: Email Nicholas Thomas
+  button: Release a random Pokemon
+button: Open menu
+button: Close menu
+region: Social links
+button: Shuffle Nicholas Thomas’s portrait cards
 heading h1: Hello, Nick Here.
 link: Contact me
 heading h2: about me
+region: Current focus areas
 heading h2: today i learned
 link: It Was Never About the Mushroom Aug 24, 2026
+link: Phone, Wallet, Keys Sep 5, 2026
 link: The Outcome Was Already in the Actions Sep 1, 2026
 link: all notes
 heading h2: musings
+link: Right About the Technology, Wrong About the Trade Sep 5, 2026
+link: The Art of Becoming Uncomfortable Sep 8, 2026
 link: all musings

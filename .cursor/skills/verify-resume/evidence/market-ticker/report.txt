@@ -1,12 +1,10 @@
 feature: market-ticker
 entry: /
-driven: 2026-09-04T13:06:00Z
-action: goto /, wait .ticker-item, GET /api/market-data
-region: Futures market prices
-status-ui: Yahoo delayed
-symbols: NQ, ES, YM, RTY
+driven: 2026-09-10T13:43:00Z
+region: Market prices
+unique-symbols: NQ, ES, YM, RTY, BTC, ETH, FTSE, NIKKEI
+status-ui: NQ/ES/YM/RTY/FTSE/NIKKEI delayed; BTC/ETH live
 http-status: 200
-http-payload-status: Yahoo delayed
-http-quotes: NQ 29522.75, ES 7736, YM 53584, RTY 2954.6
-interior-ticker: absent on /writing/
-note: Live Yahoo delayed matches the proxy body. feed-offline demo path not exercised this run.
+http-payload-status: delayed
+quotes: 8
+note: Per-item <small> plus GET /api/market-data body. No .ticker-status. No demo prices.
