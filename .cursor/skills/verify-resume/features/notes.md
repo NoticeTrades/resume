@@ -25,7 +25,7 @@ Preconditions:
 - Resume is healthy at `http://127.0.0.1:5173`.
 - `control-resume doctor` reports `ok`.
 
-- **Open index from header.** Choose `TIL`. Run `control-resume browser goto --path /` then `control-resume browser click --role link --name "TIL"`. URL is `/notes/`. Wait with `control-resume browser wait --selector '.index-row, .index-empty'`. `h1` is `today i learned` or the missing-note heading.
+- **Open index from header.** Choose `TIL`. Run `control-resume browser goto --path /` then `control-resume browser click --role link --name "TIL"`. URL is `/notes/`. Wait with `control-resume browser wait --selector '.index-row, .index-empty'`. `h1` is `today i learned`. If it is `still learning` on `/notes/` with no slug, the list fetch failed (often CORS/port); that is not empty-notebook copy.
 - **Open index from homepage CTA.** From `/`, choose `all notes`. Run `control-resume browser goto --path /` then `control-resume browser click --role link --name "all notes"`. Same `/notes/` index appears.
 - **Index content.** After load, either `.index-row` links exist or the empty copy `Nothing published yet.` is visible.
 - **Open a note.** If a row exists, choose it. Run `control-resume browser click --selector '.index-row'`. URL is `/notes/<slug>`. `h1` matches the row title. `.detail-back` reads `← Today I Learned`. `.article-body` is not empty.
@@ -37,7 +37,8 @@ Preconditions:
 
 - The index `h1` paints before Sanity settles. Wait for `.index-row` or `.index-empty` before asserting the list. There is no `[role="status"]` loading copy.
 - There is no note-count toolbar. Do not look for `.note-card`.
-- A load error reuses the same missing-note copy as a bad slug. Say which URL you opened.
+- A load error reuses the same missing-note copy as a bad slug. Say which URL you opened. `/notes/` plus `still learning` is a fetch failure; `/notes/<unknown>` plus `still learning` is a missing slug.
 - Empty notebook is valid. Do not publish a note to force a row.
+- Sanity CORS allows `http://127.0.0.1:5173`. Another origin can produce the load-error heading even when notes are published.
 - Direct `/notes/<slug>` and `/notes/?slug=<slug>` are the same entry.
 - The homepage CTA is `all notes`, not `View all notes`.

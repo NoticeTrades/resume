@@ -41,3 +41,4 @@ Preconditions:
 - A homepage highlight row skips the index. That verifies `writing-detail`, not `writing-index`.
 - `curl /writing/` only returns the empty `#app` shell. It is not a musing list.
 - Unknown `?article=` slugs render a not-found page with the same `musings` heading, not the index and not a 404 status.
+- Sanity CORS allows `http://127.0.0.1:5173`. Another port can paint `Nothing published yet.` even when articles are published. That is a CORS miss, not an empty dataset.

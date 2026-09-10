@@ -447,15 +447,24 @@ async function evaluate(cdp, expression, awaitPromise = true) {
 }
 
 const PAGE_HELPERS = String.raw`
+function visibleText(el) {
+  const walk = (node) => {
+    if (node.nodeType === Node.TEXT_NODE) return node.textContent || "";
+    if (node.nodeType !== Node.ELEMENT_NODE) return "";
+    if (node.getAttribute("aria-hidden") === "true") return "";
+    return [...node.childNodes].map(walk).join("");
+  };
+  return walk(el).replace(/\s+/g, " ").trim();
+}
 function accessibleName(el) {
   const labelled = el.getAttribute("aria-label");
   if (labelled) return labelled.trim();
   const ids = el.getAttribute("aria-labelledby");
   if (ids) {
-    const joined = ids.split(/\s+/).map((id) => (document.getElementById(id)?.textContent || "")).join(" ").replace(/\s+/g, " ").trim();
+    const joined = ids.split(/\s+/).map((id) => visibleText(document.getElementById(id) || document.createElement("span"))).join(" ").replace(/\s+/g, " ").trim();
     if (joined) return joined;
   }
-  return (el.textContent || "").replace(/\s+/g, " ").trim();
+  return visibleText(el);
 }
 function nameEquals(actual, expected) {
   return actual.toLowerCase() === expected.toLowerCase();
@@ -486,11 +495,13 @@ function findByRole(role, name) {
 function dumpAria() {
   const lines = [];
   const walk = (el, depth) => {
+    if (el.getAttribute("aria-hidden") === "true") return;
     const role = (el.getAttribute("role") || "").toLowerCase()
       || (el.tagName === "A" && el.href ? "link" : "")
       || (el.tagName === "BUTTON" ? "button" : "")
       || (el.tagName === "NAV" ? "navigation" : "")
-      || (/^H[1-6]$/.test(el.tagName) ? "heading" : "");
+      || (/^H[1-6]$/.test(el.tagName) ? "heading" : "")
+      || (el.hasAttribute("aria-label") ? "region" : "");
     const name = accessibleName(el);
     if (role && name) {
       const heading = el.tagName.startsWith("H") ? " " + el.tagName.toLowerCase() : "";
@@ -514,8 +525,12 @@ async function waitForApp(cdp, extraSelector) {
         const app = document.querySelector("#app");
         const loading = document.querySelector('[role="status"]');
         const heading = document.querySelector("h1");
+        const headingReady = heading && (
+          (heading.getAttribute("aria-label") || "").trim() ||
+          heading.textContent.trim()
+        );
         const extraOk = !extra || document.querySelector(extra);
-        if (app && heading && heading.textContent.trim() && !loading && extraOk) return true;
+        if (app && headingReady && !loading && extraOk) return true;
         await new Promise((resolve) => setTimeout(resolve, 100));
       }
       throw new Error("Timed out waiting for client render");
@@ -546,7 +561,7 @@ async function cmdBrowser(flags) {
         // keep going; client render wait is the source of truth
       }
       await waitForApp(cdp, flags.wait);
-      const info = await evaluate(cdp, "({ title: document.title, url: location.href, h1: document.querySelector('h1')?.textContent?.trim() || '' })");
+      const info = await evaluate(cdp, "({ title: document.title, url: location.href, h1: document.querySelector('h1')?.getAttribute('aria-label')?.trim() || document.querySelector('h1')?.textContent?.trim() || '' })");
       process.stdout.write(`ok goto ${info.url}\ntitle=${info.title}\nh1=${info.h1}\n`);
     });
     return;
@@ -586,7 +601,7 @@ async function cmdBrowser(flags) {
         await delay(400);
       }
       await waitForApp(cdp).catch(() => {});
-      const page = await evaluate(cdp, "({ title: document.title, url: location.href, h1: document.querySelector('h1')?.textContent?.trim() || '' })");
+      const page = await evaluate(cdp, "({ title: document.title, url: location.href, h1: document.querySelector('h1')?.getAttribute('aria-label')?.trim() || document.querySelector('h1')?.textContent?.trim() || '' })");
       process.stdout.write(`ok click ${result.tag} ${result.name}\nhref=${result.href}\nurl=${page.url}\nh1=${page.h1}\n`);
     });
     return;

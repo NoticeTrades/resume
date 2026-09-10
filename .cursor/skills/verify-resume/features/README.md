@@ -4,7 +4,7 @@ This directory is the maintained source for verifying the user-facing behavior o
 
 ## Baseline preconditions
 
-- Launch with `control-resume launch --host 127.0.0.1 --port 5173` from the repository root after `npm install`.
+- Launch with `control-resume launch --host 127.0.0.1 --port 5173` from the repository root after `npm install`. That origin is the one Sanity CORS allows; another port is a content-load miss.
 - Put `.cursor/skills/verify-resume/bin` on `PATH`.
 - Set `RESUME_VERIFY_DIR=/tmp/resume-verify` unless this run must share the machine with another instance. Then use a unique dir and port.
 - Run `control-resume doctor` and require `ok` plus origin `http://127.0.0.1:<port>`.
@@ -48,4 +48,4 @@ Keep implementation details out of the map. Name only user paths, stable handles
 - [Nick's Musings](./writing.md) covers the writing index, article detail, and missing-slug copy.
 - [Learning Library](./library.md) covers the shelf, currently-learning CMA callout, detail pages, and missing-slug copy.
 - [Today I Learned](./notes.md) covers the notes index, note detail, Learning From links, and missing-slug copy.
-- [Market ticker](./market-ticker.md) covers the homepage futures strip and `GET /api/market-data`.
+- [Market ticker](./market-ticker.md) covers the homepage market-prices strip and `GET /api/market-data`.

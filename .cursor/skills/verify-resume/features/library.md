@@ -35,7 +35,8 @@ Preconditions:
 
 - The index `h1` paints before Sanity settles. Wait for `.index-row`, `.index-empty`, or `.index-featured` before asserting the list. There is no `[role="status"]` loading copy.
 - There are no type/status filter buttons and no `#learningCount`. Do not look for `Books`, `aria-pressed`, or `.resource-card`.
-- Empty shelf is valid. It is not a failed launch.
+- Empty shelf is valid. It is not a failed launch. Load error copy is `The Library could not be loaded right now. Please try again shortly.` with heading `nothing on this shelf` and link `Try the Library again`. That is not empty-shelf copy and often means the browser could not reach Sanity (wrong port / CORS).
+- Sanity CORS allows `http://127.0.0.1:5173`. Prefer that origin.
 - The CMA callout is data-driven. Absence is a published-data miss, not a harness failure. Do not create a Sanity resource to force it.
 - Direct `/library/<slug>` and `/library/?slug=<slug>` are the same entry. Vite rewrites the clean path.
 - Do not create Sanity resources to satisfy this feature.

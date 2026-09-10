@@ -42,6 +42,7 @@ Isolation:
 - Two instances can run if each has its own `RESUME_VERIFY_DIR` and `--port --strictPort`.
 - Refuse to drive a Vite process that this run did not launch. If `instance.json` is missing or `doctor` fails, stop and relaunch. Do not attach to a leftover `:5173`.
 - The Sanity dataset is shared and read-only from this site. Do not write CMS content as part of verification.
+- Browser fetches to Sanity are CORS-limited. The documented origin `http://127.0.0.1:5173` is allowed. Another `--port` makes Musings, Library, TIL, and homepage highlights look empty or like a load error even when documents are published. That is a CORS miss, not empty CMS. Prefer the default port.
 - Do not start Studio unless a task is specifically about `studio/`.
 
 ## Doctor
@@ -96,8 +97,8 @@ Stable handles from this codebase (use these, not coordinates):
 | button name `Shuffle Nicholas Thomas’s portrait cards` | Hero card deck |
 | button name `Release a random Pokemon` | `#pokeballRelease` |
 | `#pokemonWalker.is-released` | Pokemon is on screen |
-| `[aria-label="Futures market prices"]` | Homepage ticker |
-| `.ticker-status` | `Yahoo delayed` or `feed offline` |
+| `[aria-label="Market prices"]` | Homepage ticker |
+| `.ticker-item[data-symbol]` | One symbol row (duplicated in a second track for scroll) |
 | `/writing/?article=<slug>` | Musing detail |
 | `.index-row` | Title-and-date (or title-and-cover) rows on `/writing/`, `/library/`, and `/notes/` |
 | `.index-empty` | Empty index copy |
@@ -126,8 +127,9 @@ Proof standards:
 
 - Use the real header links, highlight rows, and index rows. Do not set `location` in eval to skip navigation unless the feature file says that URL is itself an entry point.
 - `#app` HTML from `curl` is the empty shell. It is not UI proof.
+- ARIA dumps skip `aria-hidden` descendants (nav card ranks) and treat an `aria-label` without an implicit role as `region` (the ticker).
 - Writing, Library, and TIL may be empty. Empty copy is a valid result. Do not invent documents. There are no local sample musings.
-- Market ticker: `Yahoo delayed` (or another live `payload.status`) means the proxy answered. `feed offline` plus demo NQ/ES/YM/RTY prices means the UI fell back. Confirm with the `/api/market-data` body. Do not mock Yahoo inside the page.
+- Market ticker: HTTP 200 with `status: "delayed"` and eight `quotes` means the proxy answered. On-page per-item `<small>` reads `delayed`, `live` (Kraken BTC/ETH), `stale`, `loading`, or `offline`. Unavailable prices are `—`. There is no `.ticker-status`, no `feed offline` label, and no demo prices. Confirm with the `/api/market-data` body. Do not mock Yahoo inside the page.
 - Pokemon name is random. Proof is `#pokemonWalker` gaining `is-released` and `#pokemonSprite` getting a non-empty `alt`.
 - Card portrait proof is the click on the named portrait button plus a screenshot of the hero. Do not call `cardPortrait.disturb()` from eval.
 
