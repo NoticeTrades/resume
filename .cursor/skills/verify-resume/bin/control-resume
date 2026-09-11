@@ -376,6 +376,8 @@ async function ensureChrome(instance) {
     die(`Chrome debug port ${debugPort} is in use by pid ${taken.join(",")}. Set RESUME_VERIFY_CDP_PORT.`);
   }
 
+  const windowWidth = Number(instance.viewportWidth) || 1280;
+  const windowHeight = Number(instance.viewportHeight) || 800;
   const chrome = spawn(
     CHROME_BIN,
     [
@@ -387,7 +389,7 @@ async function ensureChrome(instance) {
       "--no-default-browser-check",
       `--remote-debugging-port=${debugPort}`,
       `--user-data-dir=${chromeProfile}`,
-      "--window-size=1280,800",
+      `--window-size=${windowWidth},${windowHeight}`,
       "about:blank",
     ],
     { detached: true, stdio: "ignore" }
@@ -418,6 +420,18 @@ async function pageTarget(instance) {
   return page;
 }
 
+async function applyViewport(cdp, instance) {
+  const width = Number(instance.viewportWidth);
+  const height = Number(instance.viewportHeight);
+  if (!width || !height) return;
+  await cdp.send("Emulation.setDeviceMetricsOverride", {
+    width,
+    height,
+    deviceScaleFactor: 1,
+    mobile: width <= 900,
+  });
+}
+
 async function withPage(fn) {
   const instance = requireInstance();
   await ensureChrome(instance);
@@ -426,6 +440,7 @@ async function withPage(fn) {
   await cdp.connect();
   await cdp.send("Runtime.enable");
   await cdp.send("Page.enable");
+  await applyViewport(cdp, instance);
   try {
     return await fn(cdp, instance);
   } finally {
@@ -447,15 +462,31 @@ async function evaluate(cdp, expression, awaitPromise = true) {
 }
 
 const PAGE_HELPERS = String.raw`
+function isAriaHidden(el) {
+  return el.nodeType === Node.ELEMENT_NODE && el.getAttribute("aria-hidden") === "true";
+}
+function visibleText(el) {
+  if (isAriaHidden(el)) return "";
+  let text = "";
+  for (const node of el.childNodes) {
+    if (node.nodeType === Node.TEXT_NODE) text += node.textContent;
+    else if (node.nodeType === Node.ELEMENT_NODE) text += visibleText(node);
+  }
+  return text;
+}
 function accessibleName(el) {
+  if (isAriaHidden(el)) return "";
   const labelled = el.getAttribute("aria-label");
   if (labelled) return labelled.trim();
   const ids = el.getAttribute("aria-labelledby");
   if (ids) {
-    const joined = ids.split(/\s+/).map((id) => (document.getElementById(id)?.textContent || "")).join(" ").replace(/\s+/g, " ").trim();
+    const joined = ids.split(/\s+/).map((id) => {
+      const node = document.getElementById(id);
+      return node ? visibleText(node) : "";
+    }).join(" ").replace(/\s+/g, " ").trim();
     if (joined) return joined;
   }
-  return (el.textContent || "").replace(/\s+/g, " ").trim();
+  return visibleText(el).replace(/\s+/g, " ").trim();
 }
 function nameEquals(actual, expected) {
   return actual.toLowerCase() === expected.toLowerCase();
@@ -486,6 +517,7 @@ function findByRole(role, name) {
 function dumpAria() {
   const lines = [];
   const walk = (el, depth) => {
+    if (isAriaHidden(el)) return;
     const role = (el.getAttribute("role") || "").toLowerCase()
       || (el.tagName === "A" && el.href ? "link" : "")
       || (el.tagName === "BUTTON" ? "button" : "")
@@ -532,7 +564,24 @@ function writeOut(filePath, contents, encoding = "utf8") {
 
 async function cmdBrowser(flags) {
   const action = flags._[0];
-  if (!action) die("Usage: control-resume browser <goto|click|text|eval|snapshot|screenshot|wait>");
+  if (!action) die("Usage: control-resume browser <goto|click|text|eval|snapshot|screenshot|wait|viewport>");
+
+  if (action === "viewport") {
+    const width = Number(flags.width || flags._[1]);
+    const height = Number(flags.height || flags._[2] || 844);
+    if (!Number.isFinite(width) || !Number.isFinite(height) || width < 1 || height < 1) {
+      die("Usage: control-resume browser viewport --width 390 --height 844");
+    }
+    const instance = requireInstance();
+    instance.viewportWidth = Math.round(width);
+    instance.viewportHeight = Math.round(height);
+    writeInstance(instance);
+    await withPage(async (cdp) => {
+      const size = await evaluate(cdp, "({ w: innerWidth, h: innerHeight, mq: window.matchMedia('(max-width: 900px)').matches })");
+      process.stdout.write(`ok viewport ${size.w}x${size.h} mobile=${size.mq}\n`);
+    });
+    return;
+  }
 
   if (action === "goto") {
     const route = flags.path || flags._[1];
@@ -677,6 +726,7 @@ function usage() {
   browser eval --js "document.title"
   browser snapshot --aria --path evidence/page.aria.txt
   browser screenshot --path evidence/page.png
+  browser viewport --width 390 --height 844
   stop
 `;
 }

@@ -96,8 +96,10 @@ Stable handles from this codebase (use these, not coordinates):
 | button name `Shuffle Nicholas Thomas’s portrait cards` | Hero card deck |
 | button name `Release a random Pokemon` | `#pokeballRelease` |
 | `#pokemonWalker.is-released` | Pokemon is on screen |
-| `[aria-label="Futures market prices"]` | Homepage ticker |
-| `.ticker-status` | `Yahoo delayed` or `feed offline` |
+| `[aria-label="Market prices"]` | Homepage eight-symbol ticker |
+| `.ticker-item small` | Per-item status: `loading`, `delayed`, `live`, `stale`, or `offline` |
+| button name `Open menu` | Mobile drawer toggle (`#mobileMenu`, `≤900px`) |
+| `.site-header.is-compact` | Desktop header after scroll (`≥901px`) |
 | `/writing/?article=<slug>` | Musing detail |
 | `.index-row` | Title-and-date (or title-and-cover) rows on `/writing/`, `/library/`, and `/notes/` |
 | `.index-empty` | Empty index copy |
@@ -127,7 +129,8 @@ Proof standards:
 - Use the real header links, highlight rows, and index rows. Do not set `location` in eval to skip navigation unless the feature file says that URL is itself an entry point.
 - `#app` HTML from `curl` is the empty shell. It is not UI proof.
 - Writing, Library, and TIL may be empty. Empty copy is a valid result. Do not invent documents. There are no local sample musings.
-- Market ticker: `Yahoo delayed` (or another live `payload.status`) means the proxy answered. `feed offline` plus demo NQ/ES/YM/RTY prices means the UI fell back. Confirm with the `/api/market-data` body. Do not mock Yahoo inside the page.
+- Market ticker: payload `status: "delayed"` means the proxy answered. Each `.ticker-item` carries its own status (`delayed`, `live`, `stale`, `offline`, or `loading`). There is no `.ticker-status` and no demo book. A `502` is a valid proxy miss; the UI shows `offline` / `—` or a `stale` cached price, not `feed offline` plus NQ `23785.25`. Confirm with the `/api/market-data` body. Do not mock Yahoo inside the page.
+- Production `/about` and `/about/` redirect to `/#about`. Local Vite does not. Mobile chrome is `Open menu` / `#mobileMenu` at `≤900px`; set `control-resume browser viewport --width 390 --height 844` before driving it.
 - Pokemon name is random. Proof is `#pokemonWalker` gaining `is-released` and `#pokemonSprite` getting a non-empty `alt`.
 - Card portrait proof is the click on the named portrait button plus a screenshot of the hero. Do not call `cardPortrait.disturb()` from eval.
 
@@ -155,6 +158,7 @@ control-resume doctor
 control-resume http --path /api/market-data --quiet
 control-resume browser goto --path /writing/
 control-resume browser click --role link --name "Library"
+control-resume browser viewport --width 390 --height 844
 control-resume stop
 ```
 
