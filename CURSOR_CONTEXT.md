@@ -73,7 +73,7 @@ Vite uses `vite.config.js` to build four HTML entry points. During local develop
 - Animated skill/interest items
 - Homepage Musings and Today I Learned highlights show the three most viewed published items
 - Opening a musing or note increments `views` through `POST /api/record-view` using `SANITY_API_WRITE_TOKEN` on the server only
-- YouTube and email icon links in the header
+- LinkedIn, YouTube, X, GitHub, and email icon links in the header
 - Clickable Pokeball with shine animation
 - Random released Pokemon that can move and be dragged
 - Scrolling futures ticker for NQ, ES, YM, and RTY
@@ -111,7 +111,7 @@ Ticker alignment refinement: quotes use identical 204px grids (symbol, right-ali
 - `src/lib/mobileNav.js` and `src/mobileNav.css` provide the same right-side drawer on all four pages at 900px and below. The existing navigation and social-link nodes move into a native modal dialog; desktop restores those same nodes to their original positions. The Pokeball stays in the header and the homepage ticker stays visible.
 - The drawer uses a short transform animation, 44px controls, large navigation rows, current-page indication, safe-area padding and a scrollable panel for short screens. Escape, the close button and backdrop dismiss it; following an anchor restores page scrolling before navigation. Keyboard focus stays in the dialog and returns to the trigger on dismissal. Reduced motion skips the slide. Cleanup handles interior-page rerenders and crossing the desktop breakpoint.
 - Drawer links use 20px labels and decorative spade-card marks in Nick's corrected order: Home A, About 2, Musings 3, Library 4, TIL 5. These marks are hidden on desktop and from assistive technology. Links enter one by one with 65ms staggered delays after the drawer starts opening; reduced motion skips all entrance effects, and closing cleans up pending effects.
-- `src/homeRefinements.css` makes the homepage more compact through component sizes and spacing, never CSS/browser zoom: desktop portrait 245px, mobile portrait up to 194px, smaller headline/body text and reduced hero height. Nick confirmed the smaller version feels better on iPhone, then requested more space around the portrait: mobile/tablet hero now uses 28px top inset and a 44px portrait-to-copy gap. At 901–1199px the ticker occupies its own header row to prevent horizontal overflow; wider desktop placement stays the same. The ticker uses fine separators rather than nested pill backgrounds. X links on homepage and interior headers point to `https://x.com/nickonfinance`.
+- `src/homeRefinements.css` makes the homepage more compact through component sizes and spacing, never CSS/browser zoom: desktop portrait 245px, mobile portrait up to 194px, smaller headline/body text and reduced hero height. Nick confirmed the smaller version feels better on iPhone, then requested more space around the portrait: mobile/tablet hero now uses 28px top inset and a 44px portrait-to-copy gap. At 901–1199px the ticker occupies its own header row to prevent horizontal overflow; wider desktop placement stays the same. The ticker uses fine separators rather than nested pill backgrounds. X links on homepage and interior headers point to `https://x.com/nickonfinance`. GitHub links point to `https://github.com/nickspeakscode`.
 - Card audio now requests `navigator.audioSession.type = 'playback'` during trusted gesture unlock when available. WebKit documents this for iOS 17+ to play through media volume with the Ring/Silent switch on. Unsupported or rejected session settings fall back to the existing audio behavior. The intro remains silent. Nick tested the September 8 same-Wi-Fi preview on physical iPhone Safari with the bell muted and reported that sound plays and the side button looks good. Device model/iOS version were not supplied.
 - September 7 changes were pushed to `main` as `894fbb2`. September 8 menu/audio-session changes are local only until Nick requests another push.
 
@@ -123,7 +123,7 @@ The anchored sections deliberately do not carry `reveal-on-scroll` themselves; t
 - Article detail views use their slug
 - Portable Text, images, links, and uploaded Sanity videos are supported
 - Homepage highlights are the most viewed published articles, then featured, then newest
-- The shared header includes Home, About, Musings, Library, TIL, YouTube, email, and the Pokeball interaction
+- The shared header includes Home, About, Musings, Library, TIL, LinkedIn, YouTube, X, GitHub, email, and the Pokeball interaction
 
 ### Learning Library
 

@@ -27,7 +27,7 @@ const origin = process.env.TEST_ORIGIN || 'http://127.0.0.1:5173';
         await page.locator('dialog').evaluate(el => Promise.all(el.getAnimations().map(animation => animation.finished)));
         assert.equal(await toggle.getAttribute('aria-expanded'), 'true');
         assert.equal(await page.locator('dialog nav a').count(), 5);
-        assert.equal(await page.locator('dialog .social-icons a').count(), 4);
+        assert.equal(await page.locator('dialog .social-icons a').count(), 5);
         assert.ok(await page.evaluate(() => document.querySelector('dialog').contains(document.activeElement)));
         for (let i = 0; i < 12; i++) {
           await page.keyboard.press('Tab');
@@ -68,7 +68,7 @@ const origin = process.env.TEST_ORIGIN || 'http://127.0.0.1:5173';
       await page.waitForFunction(() => !document.querySelector('dialog').open && document.querySelector('.header-left nav'));
       assert.equal(await page.locator('dialog').evaluate(el => el.open), false);
       assert.equal(await page.locator('.header-left nav a').count(), 5);
-      assert.equal(await page.locator('.site-header > .social-icons a').count(), 4);
+      assert.equal(await page.locator('.site-header > .social-icons a').count(), 5);
       assert.notEqual(await page.evaluate(() => document.body.style.position), 'fixed');
       for (const route of ['/', '/writing/', '/library/', '/notes/']) {
         await page.goto(origin + route);
